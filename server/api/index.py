@@ -3,6 +3,7 @@ from typing import List, Dict, Set, DefaultDict
 from http.server import BaseHTTPRequestHandler
 from collections import defaultdict, deque
 import numpy as np
+from urllib.parse import urlparse, parse_qs
 
 from tinygrad import Tensor
 from tinygrad.codegen.linearizer import BinaryOps, BufferOps, Linearizer, List, TernaryOps, UnaryOps
@@ -29,8 +30,11 @@ class handler(BaseHTTPRequestHandler):
     self._set_headers()
 
   def do_GET(self):
-    if self.path == "/adam": sched = _test_adam()
-    elif self.path == "/tiny": sched = self._tiny()
+    parsed_path = urlparse(self.path)
+    query_params = parse_qs(parsed_path.query)
+    test = query_params.get("test", [''])[0]
+    if test == "adam": sched = _test_adam()
+    elif test == "tiny": sched = self._tiny()
     else: sched = _get_sched_conv()
     nodes, edges = graph_schedule(sched)
     self._set_headers()

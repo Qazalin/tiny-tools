@@ -6,7 +6,7 @@ import { ScheduleNode } from "./types";
 
 export default function Base() {
   const [focusedSI, setFocusedSI] = useState<ScheduleNode | null>(null);
-  const [activeTest, setActiveTest] = useState("/adam");
+  const [activeTest, setActiveTest] = useState("adam");
 
   const graphRef = useRef<GraphCanvasRef | null>(null);
 
@@ -14,10 +14,11 @@ export default function Base() {
     code: string;
     nodes: ScheduleNode[];
     edges: GraphEdge[];
-  }>({ queryKey: [activeTest],
-refetchOnMount: false,
-refetchOnReconnect: false,
-refetchOnWindowFocus: false
+  }>({
+    queryKey: [`?test=${activeTest}`],
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
   });
   const { selections, actives, onNodeClick, onCanvasClick } = useSelection({
     ref: graphRef,
@@ -30,22 +31,22 @@ refetchOnWindowFocus: false
     <div className="h-screen w-screen p-10 font-mono">
       <div className="space-y-4">
         <div
-          className={`p-2 rounded-md cursor-pointer ${activeTest === "/adam" ? "text-white bg-gray-900 " : "text-gray-300"} w-fit`}
-          onClick={() => setActiveTest("/adam")}
+          className={`p-2 rounded-md cursor-pointer ${activeTest === "adam" ? "text-white bg-gray-900 " : "text-gray-300"} w-fit`}
+          onClick={() => setActiveTest("adam")}
         >
           <p>Test TinyBobNet+Adam</p>
         </div>
 
         <div
-          className={`p-2 rounded-md cursor-pointer ${activeTest === "/" ? "text-white bg-gray-900 " : "text-gray-300"} w-fit`}
-          onClick={() => setActiveTest("/")}
+          className={`p-2 rounded-md cursor-pointer ${activeTest === "" ? "text-white bg-gray-900 " : "text-gray-300"} w-fit`}
+          onClick={() => setActiveTest("")}
         >
           <p>Test Convnext+SGD</p>
         </div>
 
         <div
-          className={`p-2 rounded-md cursor-pointer ${activeTest === "/tiny" ? "text-white bg-gray-900 " : "text-gray-300"} w-fit`}
-          onClick={() => setActiveTest("/tiny")}
+          className={`p-2 rounded-md cursor-pointer ${activeTest === "tiny" ? "text-white bg-gray-900 " : "text-gray-300"} w-fit`}
+          onClick={() => setActiveTest("tiny")}
         >
           <p>simple multioutput/multi-level possible</p>
         </div>
