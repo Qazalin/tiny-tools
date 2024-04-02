@@ -5,9 +5,13 @@ export default function Base() {
   if (data == null) {
     return <p>loading</p>;
   }
+
+  data.code.split("\n").forEach((s) => console.log(s));
   return (
-    <div>
-      <p className="font-mono text-blue-400">{data.code}</p>
+    <div className="h-screen w-screen p-10">
+      {data.code.split("\n").map((s) => (
+        <p className="font-mono whitespace-pre">{s}</p>
+      ))}
     </div>
   );
 }

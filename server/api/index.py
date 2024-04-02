@@ -1,6 +1,7 @@
 import json
 from http.server import BaseHTTPRequestHandler
 from tinygrad.codegen.linearizer import Linearizer
+from tinygrad.helpers import to_function_name
 from tinygrad import Tensor
 from tinygrad.engine.schedule import create_schedule
 from tinygrad.renderer.cstyle import MetalRenderer
@@ -24,7 +25,7 @@ class handler(BaseHTTPRequestHandler):
     si = create_schedule([out.lazydata])[-1]
     lin = Linearizer(*si.ast)
     lin.linearize()
-    code = MetalRenderer(lin.name, lin.uops)
+    code = MetalRenderer(to_function_name(lin.name), lin.uops)
     self._set_headers()
-    self.wfile.write(json.dumps({ "code": code }).encode('utf-8'))
+    self.wfile.write(json.dumps({ "code": code }, indent=None).encode('utf-8'))
     return
