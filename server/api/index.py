@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 
 from tinygrad import Device, Tensor
 from tinygrad.codegen.linearizer import List
-from tinygrad.engine.schedule import create_schedule, _LBScheduleItem, _recurse_lb, _schedule_one, _is_padding_okay
+from tinygrad.engine.schedule import _LBScheduleItem, _recurse_lb, _schedule_one, _is_padding_okay
 from tinygrad.ops import LoadOps, ReduceOps
 from tinygrad.features.graph import realized_lazybuffer
 from tinygrad.helpers import GRAPH, GlobalCounters, dedup
@@ -25,15 +25,61 @@ class handler(BaseHTTPRequestHandler):
     self._set_headers()
 
   def do_GET(self):
-    a = Tensor([1])
-    b = Tensor([2])
-    out = a * b
-    out1 = out + 4
-    sched = create_schedule_graphable([out.lazydata, out1.lazydata])
-    nodes, edges = graph_schedule(sched)
+    nodes, edges = graph_schedule(_get_sched())
     self._set_headers()
     self.wfile.write(json.dumps({ "nodes": nodes, "edges": edges }, indent=None).encode('utf-8'))
     return
+
+def _get_sched() -> List[_LBScheduleItem]:
+  from tinygrad import Tensor
+  import numpy as np
+  from tinygrad.nn import Conv2d, LayerNorm, LayerNorm2d, Linear, optim
+  from tinygrad.nn.state import get_parameters
+
+  class Block:
+    def __init__(self, dim):
+      self.dwconv = Conv2d(dim, dim, kernel_size=7, padding=3, groups=dim)
+      self.norm = LayerNorm(dim, eps=1e-6)
+      self.pwconv1 = Linear(dim, 4 * dim)
+      self.pwconv2 = Linear(4 * dim, dim)
+      self.gamma = Tensor.ones(dim)
+
+    def __call__(self, x:Tensor):
+      return x + x.sequential([
+        self.dwconv, lambda x: x.permute(0, 2, 3, 1), self.norm,
+        self.pwconv1, Tensor.gelu, self.pwconv2, lambda x: (self.gamma * x).permute(0, 3, 1, 2)
+      ])
+
+  class ConvNeXt:
+    def __init__(self, in_chans=3, num_classes=1000, depths=[3, 3, 9, 3], dims=[96, 192, 384, 768]):
+      self.downsample_layers = [
+        [Conv2d(in_chans, dims[0], kernel_size=4, stride=4), LayerNorm2d(dims[0], eps=1e-6)],
+        *[[LayerNorm2d(dims[i], eps=1e-6), Conv2d(dims[i], dims[i+1], kernel_size=2, stride=2)] for i in range(len(dims)-1)]
+      ]
+      self.stages = [[Block(dims[i]) for _ in range(depths[i])] for i in range(len(dims))]
+      self.norm = LayerNorm(dims[-1])
+      self.head = Linear(dims[-1], num_classes)
+
+    def __call__(self, x:Tensor):
+      for downsample, stage in zip(self.downsample_layers, self.stages):
+        x = x.sequential(downsample).sequential(stage)
+      return x.mean([-2, -1]).sequential([self.norm, self.head])
+
+  model = ConvNeXt(depths=[1], dims=[16])
+  X, Y = np.zeros((2,3,224,224), dtype=np.float32), np.zeros((2), dtype=np.float32)
+  optimizer = optim.SGD(get_parameters(model), lr=0.001)
+  with Tensor.train():
+    samp = np.random.randint(0, X.shape[0], size=(2))
+    x, y = Tensor(X[samp], requires_grad=False), Tensor(Y[samp])
+    out = model(x)
+    loss = out.sparse_categorical_crossentropy(y)
+    optimizer.zero_grad()
+    loss.backward()
+
+    return create_schedule_graphable([x.lazydata for x in optimizer.step2()])
+    out = Tensor([1,2,3,4]) + Tensor([3,4,5,6])
+    return create_schedule_graphable([out.lazydata])
+   
 
 def graph_schedule(schedule: List[_LBScheduleItem]):
   lb_schedules = {out: si for si in schedule for out in si.outputs}
