@@ -14,7 +14,11 @@ export default function Base() {
     code: string;
     nodes: ScheduleNode[];
     edges: GraphEdge[];
-  }>({ queryKey: [activeTest] });
+  }>({ queryKey: [activeTest],
+refetchOnMount: false,
+refetchOnReconnect: false,
+refetchOnWindowFocus: false
+  });
   const { selections, actives, onNodeClick, onCanvasClick } = useSelection({
     ref: graphRef,
     nodes: data?.nodes ?? [],
