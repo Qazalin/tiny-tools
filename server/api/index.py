@@ -1,19 +1,20 @@
-import json
+import json, functools
 from typing import List, Dict, Set, DefaultDict
 from http.server import BaseHTTPRequestHandler
 from collections import defaultdict, deque
 import numpy as np
 
-from tinygrad import Device, Tensor
-from tinygrad.codegen.linearizer import BinaryOps, BufferOps, LazyOp, List, TernaryOps, UnaryOps
+from tinygrad import Tensor
+from tinygrad.codegen.linearizer import BinaryOps, BufferOps, Linearizer, List, TernaryOps, UnaryOps
 from tinygrad.engine.schedule import _LBScheduleItem, _recurse_lb, _schedule_one, _is_padding_okay
 from tinygrad.nn import optim
 from tinygrad.nn.state import get_parameters
 from tinygrad.ops import LoadOps, ReduceOps
 from tinygrad.features.graph import realized_lazybuffer
-from tinygrad.helpers import GRAPH, GlobalCounters, dedup
+from tinygrad.helpers import GRAPH, GlobalCounters, dedup, to_function_name
 from tinygrad.lazy import LazyBuffer
 from tinygrad.shape.shapetracker import ShapeTracker
+from tinygrad.renderer.cstyle import OpenCLRenderer
 
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
@@ -98,6 +99,14 @@ def _test_adam():
 def my_step(opt):
   extra = opt._step()
   return extra + opt.params + opt.buffers if extra is not None else opt.params + opt.buffers
+
+
+@functools.lru_cache(None)    # pylint: disable=method-cache-max-size-none
+def linearize_si(ast):
+  lin = Linearizer(*ast)
+  lin.linearize()
+  return lin
+
 def _schedule_train_step(X, Y, model, optimizer):
   with Tensor.train():
     samp = np.random.randint(0, X.shape[0], size=(2))
@@ -112,15 +121,15 @@ top_colors = {LoadOps: '#FFFFa0', UnaryOps: "#c0c0c0", ReduceOps: "#FFA0A0", Bin
 def get_si_color(si: _LBScheduleItem):
   #if si.outputs[0].shape == (2, 56, 56, 64) and si.outputs[0].srcs[0].base.op in ReduceOps: return "red"
   #return "blue"
-  if Device["METAL"].get_runner(*si.ast).name.startswith("r_"): return top_colors[ReduceOps]
+  if linearize_si(si.ast).name.startswith("r_"): return top_colors[ReduceOps]
   return [v for k,v in top_colors.items() if si.ast[0].src[0].op in k][0]
 def graph_schedule(schedule: List[_LBScheduleItem]):
   lb_schedules = {out: si for si in schedule for out in si.outputs}
   nodes, edges = [], []
   
   for i, si in enumerate(schedule):
-    code = "" if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).prg
-    label = si.ast[0].op.name if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).name
+    code = "" if si.ast[0].op in LoadOps else OpenCLRenderer(to_function_name(linearize_si(si.ast).name), linearize_si(si.ast).uops)
+    label = si.ast[0].op.name if si.ast[0].op in LoadOps else to_function_name(linearize_si(si.ast).name)
     fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else get_si_color(si)
     inputs, outputs = [str(lb) for lb in si.inputs], [str(lb) for lb in si.outputs]
     nodes.append({'id': str(i+1), 'label': label, 'fill': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs})
