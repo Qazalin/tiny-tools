@@ -27,10 +27,25 @@ export default function Kernel({ si, onClose }: KernelProps) {
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </div>
-        <div>
-          {si?.code
-            .split("\n")
-            .map((s) => <p className="font-mono whitespace-pre">{s}</p>)}
+        <div className="space-y-3 font-mono">
+          <div>
+            {si?.code
+              .split("\n")
+              .map((s) => <p className="whitespace-pre">{s}</p>)}
+          </div>
+          <hr className="opacity-30" />
+          <div>
+            <p className="text-lg">inputs:</p>
+            {si.inputs.map((inp) => (
+              <p>{inp}</p>
+            ))}
+          </div>
+          <div>
+            <p className="text-lg">outputs:</p>
+            {si.outputs.map((inp) => (
+              <p>{inp}</p>
+            ))}
+          </div>
         </div>
       </div>
     </div>

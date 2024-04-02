@@ -11,13 +11,10 @@ export default function Base() {
     code: string;
     nodes: ScheduleNode[];
     edges: GraphEdge[];
-  }>({
-    queryKey: ["/"],
-  });
+  }>({ queryKey: ["/"] });
   if (data == null) {
     return <p>loading</p>;
   }
-  console.log(focusedSI);
 
   return (
     <div className="h-screen w-screen p-10">
@@ -54,11 +51,10 @@ export default function Base() {
           },
           arrow: { fill: "#D8E6EA", activeFill: "#1DE9AC" },
         }}
+        layoutType="treeTd2d"
         onNodeDoubleClick={(node) => setFocusedSI(node.data as ScheduleNode)}
       />
-      <KernelModal si={focusedSI}
-onClose={() => setFocusedSI(null)}
-      />
+      <KernelModal si={focusedSI} onClose={() => setFocusedSI(null)} />
     </div>
   );
 }
