@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
 export default function Base() {
-  const { data } = useQuery({ queryKey: ["http://localhost:8000"] });
-  console.log(data);
+  const { data } = useQuery<{ code: string }>({ queryKey: ["/"] });
+  if (data == null) {
+    return <p>loading</p>;
+  }
   return (
     <div>
-      <p className="text-blue-400">hi</p>
+      <p className="font-mono text-blue-400">{data.code}</p>
     </div>
   );
 }
