@@ -1,24 +1,35 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { GraphCanvas, GraphEdge } from "reagraph";
+import { useRef, useState } from "react";
+import { GraphCanvas, GraphCanvasRef, GraphEdge, useSelection } from "reagraph";
 import KernelModal from "./Kernel";
 import { ScheduleNode } from "./types";
 
 export default function Base() {
   const [focusedSI, setFocusedSI] = useState<ScheduleNode | null>(null);
 
+  const graphRef = useRef<GraphCanvasRef | null>(null);
+
   const { data } = useQuery<{
     code: string;
     nodes: ScheduleNode[];
     edges: GraphEdge[];
   }>({ queryKey: ["/"] });
+  const { selections, actives, onNodeClick, onCanvasClick } = useSelection({
+    ref: graphRef,
+    nodes: data?.nodes ?? [],
+    edges: data?.edges ?? [],
+    pathSelectionType: "all",
+  });
+
   if (data == null) {
     return <p>loading</p>;
   }
 
+  console.log(data.nodes);
   return (
     <div className="h-screen w-screen p-10">
       <GraphCanvas
+        ref={graphRef}
         nodes={data.nodes}
         edges={data.edges}
         theme={{
@@ -39,7 +50,7 @@ export default function Base() {
           edge: {
             fill: "#D8E6EA",
             activeFill: "#1DE9AC",
-            opacity: 1,
+            opacity: 0.2,
             selectedOpacity: 1,
             inactiveOpacity: 0.1,
             label: {
@@ -53,6 +64,11 @@ export default function Base() {
         }}
         layoutType="treeTd2d"
         onNodeDoubleClick={(node) => setFocusedSI(node.data as ScheduleNode)}
+        selections={selections}
+        actives={actives}
+        onCanvasClick={onCanvasClick}
+        animated={false}
+        onNodeClick={onNodeClick}
       />
       <KernelModal si={focusedSI} onClose={() => setFocusedSI(null)} />
     </div>

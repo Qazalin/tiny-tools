@@ -2,7 +2,6 @@ import { ScheduleNode } from "./types";
 
 type KernelProps = { si: ScheduleNode | null; onClose: () => void };
 export default function Kernel({ si, onClose }: KernelProps) {
-  console.log(si?.code);
   if (si == null) {
     return null;
   }

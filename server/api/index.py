@@ -1,10 +1,10 @@
 import json
-from typing import List, Dict, Set, DefaultDict
+from typing import List, Dict, Set, DefaultDict, Tuple
 from http.server import BaseHTTPRequestHandler
 from collections import defaultdict, deque
 
 from tinygrad import Device, Tensor
-from tinygrad.codegen.linearizer import List
+from tinygrad.codegen.linearizer import BinaryOps, BufferOps, LazyOp, List, TernaryOps, UnaryOps
 from tinygrad.engine.schedule import _LBScheduleItem, _recurse_lb, _schedule_one, _is_padding_okay
 from tinygrad.ops import LoadOps, ReduceOps
 from tinygrad.features.graph import realized_lazybuffer
@@ -81,6 +81,9 @@ def _get_sched() -> List[_LBScheduleItem]:
     return create_schedule_graphable([out.lazydata])
    
 
+top_colors = {LoadOps: '#FFFFa0', UnaryOps: "#c0c0c0", ReduceOps: "#FFA0A0", BinaryOps: "#c0c0c0",
+              TernaryOps: "#c0c0c0", BufferOps: '#a0a0ff'}
+def get_ast_color(ast:Tuple[LazyOp, ...]): return [v for k,v in top_colors.items() if ast[0].src[0].op in k][0]
 def graph_schedule(schedule: List[_LBScheduleItem]):
   lb_schedules = {out: si for si in schedule for out in si.outputs}
   nodes, edges = [], []
@@ -88,9 +91,9 @@ def graph_schedule(schedule: List[_LBScheduleItem]):
   for i, si in enumerate(schedule):
     code = "" if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).prg
     label = si.ast[0].op.name if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).name
-    fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else "#c0ffc0"
+    fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else get_ast_color(si.ast)
     inputs, outputs = [str(lb) for lb in si.inputs], [str(lb) for lb in si.outputs]
-    nodes.append({'id': str(i+1), 'label': label, 'color': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs})
+    nodes.append({'id': str(i+1), 'label': label, 'fill': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs})
     for x in si.inputs:
       if x not in lb_schedules: continue
       source_index = schedule.index(lb_schedules[x]) + 1
