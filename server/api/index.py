@@ -1,11 +1,14 @@
 import json
-from typing import List, Dict, Set, DefaultDict, Tuple
+from typing import List, Dict, Set, DefaultDict
 from http.server import BaseHTTPRequestHandler
 from collections import defaultdict, deque
+import numpy as np
 
 from tinygrad import Device, Tensor
 from tinygrad.codegen.linearizer import BinaryOps, BufferOps, LazyOp, List, TernaryOps, UnaryOps
 from tinygrad.engine.schedule import _LBScheduleItem, _recurse_lb, _schedule_one, _is_padding_okay
+from tinygrad.nn import optim
+from tinygrad.nn.state import get_parameters
 from tinygrad.ops import LoadOps, ReduceOps
 from tinygrad.features.graph import realized_lazybuffer
 from tinygrad.helpers import GRAPH, GlobalCounters, dedup
@@ -25,14 +28,26 @@ class handler(BaseHTTPRequestHandler):
     self._set_headers()
 
   def do_GET(self):
-    nodes, edges = graph_schedule(_get_sched())
+    if self.path == "/adam": sched = _test_adam()
+    elif self.path == "/tiny": sched = self._tiny()
+    else: sched = _get_sched_conv()
+    nodes, edges = graph_schedule(sched)
     self._set_headers()
     self.wfile.write(json.dumps({ "nodes": nodes, "edges": edges }, indent=None).encode('utf-8'))
     return
 
-def _get_sched() -> List[_LBScheduleItem]:
+  def _tiny(self):
+    a = Tensor([1,2,3,4])
+    b = Tensor([1,2,3,4])
+    c = Tensor([1,2,3,4])
+
+    out0 = a + b
+    out1 = out0 + b
+    out2 = out0 + out1 + c
+    return create_schedule_graphable([out0.lazydata, out1.lazydata, out2.lazydata])
+
+def _get_sched_conv() -> List[_LBScheduleItem]:
   from tinygrad import Tensor
-  import numpy as np
   from tinygrad.nn import Conv2d, LayerNorm, LayerNorm2d, Linear, optim
   from tinygrad.nn.state import get_parameters
 
@@ -59,15 +74,31 @@ def _get_sched() -> List[_LBScheduleItem]:
       self.stages = [[Block(dims[i]) for _ in range(depths[i])] for i in range(len(dims))]
       self.norm = LayerNorm(dims[-1])
       self.head = Linear(dims[-1], num_classes)
-
     def __call__(self, x:Tensor):
       for downsample, stage in zip(self.downsample_layers, self.stages):
         x = x.sequential(downsample).sequential(stage)
       return x.mean([-2, -1]).sequential([self.norm, self.head])
-
   model = ConvNeXt(depths=[1], dims=[16])
-  X, Y = np.zeros((2,3,224,224), dtype=np.float32), np.zeros((2), dtype=np.float32)
   optimizer = optim.SGD(get_parameters(model), lr=0.001)
+  X, Y = np.zeros((2,3,224,224), dtype=np.float32), np.zeros((2), dtype=np.float32)
+  return _schedule_train_step(X, Y, model, optimizer)
+
+def _test_adam():
+  class TinyBobNet:
+    def __init__(self):
+      self.l1 = Tensor.scaled_uniform(784, 128)
+      self.l2 = Tensor.scaled_uniform(128, 10)
+    def parameters(self): return get_parameters(self)
+    def __call__(self, x): return x.dot(self.l1).relu().dot(self.l2)
+  model = TinyBobNet()
+  optimizer = optim.Adam(model.parameters(), lr=0.001)
+  X, Y = np.zeros((60000, 784), dtype=np.float32), np.zeros((60000,), dtype=np.float32)
+  return _schedule_train_step(X, Y, model, optimizer)
+
+def my_step(opt):
+  extra = opt._step()
+  return extra + opt.params + opt.buffers if extra is not None else opt.params + opt.buffers
+def _schedule_train_step(X, Y, model, optimizer):
   with Tensor.train():
     samp = np.random.randint(0, X.shape[0], size=(2))
     x, y = Tensor(X[samp], requires_grad=False), Tensor(Y[samp])
@@ -75,15 +106,14 @@ def _get_sched() -> List[_LBScheduleItem]:
     loss = out.sparse_categorical_crossentropy(y)
     optimizer.zero_grad()
     loss.backward()
-
-    return create_schedule_graphable([x.lazydata for x in optimizer.step2()])
-    out = Tensor([1,2,3,4]) + Tensor([3,4,5,6])
-    return create_schedule_graphable([out.lazydata])
-   
-
+    return create_schedule_graphable([x.lazydata for x in my_step(optimizer)])
 top_colors = {LoadOps: '#FFFFa0', UnaryOps: "#c0c0c0", ReduceOps: "#FFA0A0", BinaryOps: "#c0c0c0",
               TernaryOps: "#c0c0c0", BufferOps: '#a0a0ff'}
-def get_ast_color(ast:Tuple[LazyOp, ...]): return [v for k,v in top_colors.items() if ast[0].src[0].op in k][0]
+def get_si_color(si: _LBScheduleItem):
+  #if si.outputs[0].shape == (2, 56, 56, 64) and si.outputs[0].srcs[0].base.op in ReduceOps: return "red"
+  #return "blue"
+  if Device["METAL"].get_runner(*si.ast).name.startswith("r_"): return top_colors[ReduceOps]
+  return [v for k,v in top_colors.items() if si.ast[0].src[0].op in k][0]
 def graph_schedule(schedule: List[_LBScheduleItem]):
   lb_schedules = {out: si for si in schedule for out in si.outputs}
   nodes, edges = [], []
@@ -91,7 +121,7 @@ def graph_schedule(schedule: List[_LBScheduleItem]):
   for i, si in enumerate(schedule):
     code = "" if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).prg
     label = si.ast[0].op.name if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).name
-    fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else get_ast_color(si.ast)
+    fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else get_si_color(si)
     inputs, outputs = [str(lb) for lb in si.inputs], [str(lb) for lb in si.outputs]
     nodes.append({'id': str(i+1), 'label': label, 'fill': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs})
     for x in si.inputs:
@@ -184,7 +214,6 @@ def create_schedule_graphable(outs: List[LazyBuffer]) -> List[_LBScheduleItem]:
         graph[out].append(assign_targets[x])
         in_degree[assign_targets[x]] += 1
       if x in prescheduled: in_degree[out] += 1
-    del out.srcs  # can only schedule once
 
   queue = deque(out for out in prescheduled if in_degree[out] == 0)
   schedule: List[_LBScheduleItem] = []
