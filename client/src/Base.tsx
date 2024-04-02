@@ -54,7 +54,7 @@ export default function Base() {
       {data == null ? (
         <div>loading</div>
       ) : (
-        <div className="fixed w-[100%] h-full bg-red-400">
+        <div className="fixed w-[100%] h-full">
           <GraphCanvas
             ref={graphRef}
             nodes={data.nodes}
