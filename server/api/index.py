@@ -27,8 +27,9 @@ class handler(BaseHTTPRequestHandler):
   def do_GET(self):
     a = Tensor([1])
     b = Tensor([2])
-    out = a + b
-    sched = create_schedule_graphable([out.lazydata])
+    out = a * b
+    out1 = out + 4
+    sched = create_schedule_graphable([out.lazydata, out1.lazydata])
     nodes, edges = graph_schedule(sched)
     self._set_headers()
     self.wfile.write(json.dumps({ "nodes": nodes, "edges": edges }, indent=None).encode('utf-8'))
@@ -39,10 +40,11 @@ def graph_schedule(schedule: List[_LBScheduleItem]):
   nodes, edges = [], []
   
   for i, si in enumerate(schedule):
-    label = ' '.join([op.op.name for op in si.ast])
-    fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else "#c0ffc0"
     code = "" if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).prg
-    nodes.append({'id': str(i+1), 'label': label, 'color': fillcolor, 'code': code})
+    label = si.ast[0].op.name if si.ast[0].op in LoadOps else Device["METAL"].get_runner(*si.ast).name
+    fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else "#c0ffc0"
+    inputs, outputs = [str(lb) for lb in si.inputs], [str(lb) for lb in si.outputs]
+    nodes.append({'id': str(i+1), 'label': label, 'color': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs})
     for x in si.inputs:
       if x not in lb_schedules: continue
       source_index = schedule.index(lb_schedules[x]) + 1
