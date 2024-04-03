@@ -33,7 +33,7 @@ class handler(BaseHTTPRequestHandler):
     parsed_path = urlparse(self.path)
     query_params = parse_qs(parsed_path.query)
     test = query_params.get("test", [''])[0]
-    if test == "adam": sched = _test_adam2()
+    if test == "adam": sched = _test_adam()
     elif test == "tiny": sched = self._tiny()
     else: sched = _get_sched_conv()
     nodes, edges = graph_schedule(sched)
