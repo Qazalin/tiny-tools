@@ -19,6 +19,7 @@ export default function Kernel({ si, onClose }: KernelProps) {
   if (si == null) {
     return null;
   }
+  console.log(si);
   return (
     <div className="bg-black bg-opacity-65 data-[state=open]:animate-overlayShow fixed inset-0 h-full w-full flex items-center justify-center z-40">
       <div
@@ -45,22 +46,28 @@ export default function Kernel({ si, onClose }: KernelProps) {
         </div>
         <div className="space-y-3 font-mono">
           <div>
-            {si?.code
-              .split("\n")
-              .map((s) => <p className="whitespace-pre">{s}</p>)}
+            {si?.code.split("\n").map((s) => (
+              <p className="whitespace-pre" key={s}>
+                {s}
+              </p>
+            ))}
           </div>
           <hr className="opacity-30" />
           <div>
             <p className="text-lg">inputs:</p>
             {si.inputs.map((inp) => (
-              <p>{inp}</p>
+              <p key={inp}>{inp}</p>
             ))}
           </div>
           <div>
             <p className="text-lg">outputs:</p>
             {si.outputs.map((inp) => (
-              <p>{inp}</p>
+              <p key={inp}>{inp}</p>
             ))}
+          </div>
+          <div>
+            <p className="text-lg">Shape:</p>
+            <p>{si.shape}</p>
           </div>
         </div>
       </div>

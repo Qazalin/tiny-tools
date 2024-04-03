@@ -10,7 +10,7 @@ from tinygrad.codegen.linearizer import BinaryOps, BufferOps, Linearizer, List, 
 from tinygrad.engine.schedule import _LBScheduleItem, _recurse_lb, _schedule_one, _is_padding_okay
 from tinygrad.nn import optim
 from tinygrad.nn.state import get_parameters
-from tinygrad.ops import LoadOps, ReduceOps
+from tinygrad.ops import LoadOps, MemBuffer, ReduceOps
 from tinygrad.features.graph import realized_lazybuffer
 from tinygrad.helpers import GRAPH, GlobalCounters, dedup, to_function_name
 from tinygrad.lazy import LazyBuffer
@@ -33,7 +33,7 @@ class handler(BaseHTTPRequestHandler):
     parsed_path = urlparse(self.path)
     query_params = parse_qs(parsed_path.query)
     test = query_params.get("test", [''])[0]
-    if test == "adam": sched = _test_adam()
+    if test == "adam": sched = _test_adam2()
     elif test == "tiny": sched = self._tiny()
     else: sched = _get_sched_conv()
     nodes, edges = graph_schedule(sched)
@@ -100,10 +100,21 @@ def _test_adam():
   X, Y = np.zeros((60000, 784), dtype=np.float32), np.zeros((60000,), dtype=np.float32)
   return _schedule_train_step(X, Y, model, optimizer)
 
+def _test_adam2():
+  init_x = Tensor.randn((1, 4)).numpy()
+  init_W = Tensor.randn((4, 4)).numpy()
+  class Model:
+    def __init__(self, tensor):
+      self.x = tensor(init_x, requires_grad=True)
+      self.W = tensor(init_W, requires_grad=True)
+    def forward(self): return (self.x * self.W).sum()
+  tiny_model = Model(Tensor)
+  tiny_adam = optim.Adam([tiny_model.x, tiny_model.W], lr=0.001)
+  return _schedule_train_step(model=tiny_model, optimizer=tiny_adam)
+
 def my_step(opt):
   extra = opt._step()
   return extra + opt.params + opt.buffers if extra is not None else opt.params + opt.buffers
-
 
 @functools.lru_cache(None)    # pylint: disable=method-cache-max-size-none
 def linearize_si(ast):
@@ -111,20 +122,27 @@ def linearize_si(ast):
   lin.linearize()
   return lin
 
-def _schedule_train_step(X, Y, model, optimizer):
+def _schedule_train_step(X=None, Y=None, model=None, optimizer=None):
+  assert model and optimizer
   with Tensor.train():
-    samp = np.random.randint(0, X.shape[0], size=(2))
-    x, y = Tensor(X[samp], requires_grad=False), Tensor(Y[samp])
-    out = model(x)
-    loss = out.sparse_categorical_crossentropy(y)
+    y = None
+    if X is not None and Y is not None:
+      samp = np.random.randint(0, X.shape[0], size=(2))
+      x, y = Tensor(X[samp], requires_grad=False), Tensor(Y[samp])
+      out = model(x)
+    else: out = model()
+    if y is not None:
+      loss = out.sparse_categorical_crossentropy(y)
+      loss.backward()
+    else: out.backward()
     optimizer.zero_grad()
-    loss.backward()
     return create_schedule_graphable([x.lazydata for x in my_step(optimizer)])
 top_colors = {LoadOps: '#FFFFa0', UnaryOps: "#c0c0c0", ReduceOps: "#FFA0A0", BinaryOps: "#c0c0c0",
               TernaryOps: "#c0c0c0", BufferOps: '#a0a0ff'}
 def get_si_color(si: _LBScheduleItem):
-  #if si.outputs[0].shape == (2, 56, 56, 64) and si.outputs[0].srcs[0].base.op in ReduceOps: return "red"
-  #return "blue"
+  ops = si.ast[0].lazyops
+  #if any([op.op is ReduceOps.SUM for op in ops]) and si.ast[0].arg.st.shape == (2, 56, 56, 64, 1): return "red"
+  return top_colors[BinaryOps]
   if linearize_si(si.ast).name.startswith("r_"): return top_colors[ReduceOps]
   return [v for k,v in top_colors.items() if si.ast[0].src[0].op in k][0]
 def graph_schedule(schedule: List[_LBScheduleItem]):
@@ -136,7 +154,8 @@ def graph_schedule(schedule: List[_LBScheduleItem]):
     label = si.ast[0].op.name if si.ast[0].op in LoadOps else to_function_name(linearize_si(si.ast).name)
     fillcolor = "#ffc0c0" if si.ast[0].op in LoadOps else get_si_color(si)
     inputs, outputs = [str(lb) for lb in si.inputs], [str(lb) for lb in si.outputs]
-    nodes.append({'id': str(i+1), 'label': label, 'fill': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs})
+    shape = si.outputs[0].shape if si.ast[0].op in LoadOps else si.ast[0].arg.st.shape 
+    nodes.append({'id': str(i+1), 'label': label, 'fill': fillcolor, 'code': code, 'inputs': inputs, 'outputs': outputs, 'shape': str(shape)})
     for x in si.inputs:
       if x not in lb_schedules: continue
       source_index = schedule.index(lb_schedules[x]) + 1

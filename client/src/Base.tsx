@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GraphCanvas, GraphCanvasRef, GraphEdge, useSelection } from "reagraph";
 import KernelModal from "./Kernel";
 import { ScheduleNode } from "./types";
 
 export default function Base() {
   const [focusedSI, setFocusedSI] = useState<ScheduleNode | null>(null);
-  const [activeTest, setActiveTest] = useState("adam");
+  const [activeTest, setActiveTest] = useState("");
+
+  const [nodes, setNodes] = useState<ScheduleNode[]>([]);
+  const [searchShape, setSearchShape] = useState("");
+  const [colorReduces, setColorReduces] = useState(false);
 
   const graphRef = useRef<GraphCanvasRef | null>(null);
 
@@ -26,6 +30,35 @@ export default function Base() {
     edges: data?.edges ?? [],
     pathSelectionType: "all",
   });
+
+  useEffect(() => {
+    if (data != null) {
+      setNodes(data.nodes);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const newNodes = nodes.map((node) => {
+      if (node.shape.startsWith(searchShape) && node.code.includes("r_")) {
+        return { ...node, fill: "red" };
+      }
+      return { ...node, fill: "#c0c0c0" };
+    });
+    setNodes(newNodes);
+  }, [searchShape]);
+
+  useEffect(() => {
+    const newNodes = nodes.map((node) => {
+      if (node.code.includes("r_") && colorReduces) {
+        return {
+          ...node,
+          fill: node.outputs[0].includes("ReduceOps") ? "red" : "pink",
+        };
+      }
+      return { ...node, fill: "#c0c0c0" };
+    });
+    setNodes(newNodes);
+  }, [colorReduces]);
 
   return (
     <div className="h-screen w-screen p-10 font-mono">
@@ -51,13 +84,44 @@ export default function Base() {
           <p>simple multioutput/multi-level possible</p>
         </div>
       </div>
+
+      <div className="flex space-x-2">
+        <label>search lb by shape:</label>
+        <input
+          className="bg-gray-900 outline-none p-1 px-2 rounded-md"
+          type="text"
+          value={searchShape}
+          onChange={(e) => setSearchShape(e.target.value)}
+        />
+      </div>
+
+      <div className="flex space-x-2">
+        <label>color reduces:</label>
+        <input
+          className="bg-gray-900 outline-none p-1 px-2 rounded-md"
+          type="checkbox"
+          checked={colorReduces}
+          onChange={(e) => setColorReduces(e.target.checked)}
+        />
+
+        <div className="flex space-x-2 items-center">
+          <div className="flex flex-col space-y-1 justify-center">
+            <div className="w-4 h-4 rounded-full bg-pink-500" />
+            <p>reduce pair</p>
+          </div>
+          <div className="flex flex-col space-y-1 justify-center">
+            <div className="w-4 h-4 rounded-full bg-red-500" />
+            <p>alone reduce</p>
+          </div>
+        </div>
+      </div>
       {data == null ? (
         <div>loading</div>
       ) : (
         <div className="fixed w-[100%] h-full">
           <GraphCanvas
             ref={graphRef}
-            nodes={data.nodes}
+            nodes={nodes}
             edges={data.edges}
             theme={{
               canvas: { background: "#000" },
