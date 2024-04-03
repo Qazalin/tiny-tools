@@ -1,13 +1,30 @@
+import { useEffect, useRef } from "react";
 import { ScheduleNode } from "./types";
 
 type KernelProps = { si: ScheduleNode | null; onClose: () => void };
 export default function Kernel({ si, onClose }: KernelProps) {
+  const ref = useRef<any>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (ref.current && !ref.current.contains(event.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
   if (si == null) {
     return null;
   }
   return (
     <div className="bg-black bg-opacity-65 data-[state=open]:animate-overlayShow fixed inset-0 h-full w-full flex items-center justify-center z-40">
-      <div className="relative max-h-[85vh] max-w-[50vw] focus:outline-none bg-gray-900 p-4 rounded-md overflow-scroll z-50">
+      <div
+        className="relative max-h-[85vh] max-w-[50vw] focus:outline-none bg-gray-900 p-4 rounded-md overflow-scroll z-50"
+        ref={ref}
+      >
         <div className="absolute top-5 right-5">
           <svg
             xmlns="http://www.w3.org/2000/svg"
