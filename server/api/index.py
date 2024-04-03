@@ -110,7 +110,7 @@ def _test_adam2():
     def forward(self): return (self.x * self.W).sum()
   tiny_model = Model(Tensor)
   tiny_adam = optim.Adam([tiny_model.x, tiny_model.W], lr=0.001)
-  return _schedule_train_step(model=tiny_model, optimizer=tiny_adam)
+  #return _schedule_train_step(model=tiny_model, optimizer=tiny_adam)
 
 def my_step(opt):
   extra = opt._step()
@@ -122,21 +122,16 @@ def linearize_si(ast):
   lin.linearize()
   return lin
 
-def _schedule_train_step(X=None, Y=None, model=None, optimizer=None):
-  assert model and optimizer
+def _schedule_train_step(X, Y, model, optimizer):
   with Tensor.train():
-    y = None
-    if X is not None and Y is not None:
-      samp = np.random.randint(0, X.shape[0], size=(2))
-      x, y = Tensor(X[samp], requires_grad=False), Tensor(Y[samp])
-      out = model(x)
-    else: out = model()
-    if y is not None:
-      loss = out.sparse_categorical_crossentropy(y)
-      loss.backward()
-    else: out.backward()
+    samp = np.random.randint(0, X.shape[0], size=(2))
+    x, y = Tensor(X[samp], requires_grad=False), Tensor(Y[samp])
+    out = model(x)
+    loss = out.sparse_categorical_crossentropy(y)
     optimizer.zero_grad()
+    loss.backward()
     return create_schedule_graphable([x.lazydata for x in my_step(optimizer)])
+
 top_colors = {LoadOps: '#FFFFa0', UnaryOps: "#c0c0c0", ReduceOps: "#FFA0A0", BinaryOps: "#c0c0c0",
               TernaryOps: "#c0c0c0", BufferOps: '#a0a0ff'}
 def get_si_color(si: _LBScheduleItem):
