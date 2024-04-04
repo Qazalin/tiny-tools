@@ -13,10 +13,10 @@ export default function FileUploader({
   const { mutateAsync } = useMutation({
     mutationKey: ["upload"],
     mutationFn: async (formData: FormData) => {
-      const res = await fetch(
-        (process.env.REACT_APP_API_URL as string) + "/upload",
-        { method: "POST", body: formData },
-      );
+      const res = await fetch(process.env.REACT_APP_API_URL as string, {
+        method: "POST",
+        body: formData,
+      });
       const data: GraphData = await res.json();
       return data;
     },
