@@ -6,7 +6,6 @@ import { graphTheme } from "./theme";
 
 export default function Graph({ data }: { data: GraphData }) {
   const [focusedSI, setFocusedSI] = useState<ScheduleNode | null>(null);
-  const [nodes, setNodes] = useState<ScheduleNode[]>(data.nodes);
   const graphRef = useRef<GraphCanvasRef | null>(null);
   const { selections, actives, onNodeClick, onCanvasClick } = useSelection({
     ref: graphRef,
@@ -19,7 +18,7 @@ export default function Graph({ data }: { data: GraphData }) {
     <div className="fixed w-[100%] h-full">
       <GraphCanvas
         ref={graphRef}
-        nodes={nodes}
+        nodes={data.nodes}
         edges={data.edges}
         theme={graphTheme}
         layoutType="treeTd2d"
