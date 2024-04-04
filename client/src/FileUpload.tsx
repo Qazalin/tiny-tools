@@ -24,8 +24,7 @@ export default function FileUploader({
       setGraph(data);
     },
   });
-  let isUploading = useIsMutating({ mutationKey: ["upload"] }) > 1;
-  isUploading = false;
+  const isUploading = useIsMutating({ mutationKey: ["upload"] }) > 0;
 
   const handleUpload = async (e: any) => {
     const file = e.target.files[0];
