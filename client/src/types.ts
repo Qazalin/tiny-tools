@@ -1,4 +1,4 @@
-import { GraphNode } from "reagraph";
+import { GraphEdge, GraphNode } from "reagraph";
 
 export type ScheduleNode = GraphNode & {
   code: string;
@@ -6,3 +6,4 @@ export type ScheduleNode = GraphNode & {
   outputs: string[];
   shape: string;
 };
+export type GraphData = { nodes: ScheduleNode[]; edges: GraphEdge[] };
