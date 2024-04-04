@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import Base from "./Base";
 import FileUploader from "./FileUpload";
+import Graph from "./Graph";
 import { GraphData } from "./types";
 
 const queryClient = new QueryClient({
@@ -25,7 +25,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <FileUploader setGraph={setGraph} />
-      {graph != null && <Base data={graph} />}
+      {graph != null && <Graph data={graph} />}
     </QueryClientProvider>
   );
 }
