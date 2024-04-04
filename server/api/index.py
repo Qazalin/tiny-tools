@@ -2,7 +2,6 @@ import json, functools, pickle, io, importlib, cgi
 from typing import List
 from http.server import BaseHTTPRequestHandler
 import numpy as np
-from urllib.parse import urlparse, parse_qs
 
 from tinygrad import Tensor
 from tinygrad.codegen.linearizer import Linearizer, List
@@ -26,36 +25,22 @@ class handler(BaseHTTPRequestHandler):
     self._set_headers()
 
   def do_POST(self):
-    if self.path == '/upload':
-      ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-      pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-      if ctype == 'multipart/form-data':
-          fields = cgi.parse_multipart(self.rfile, pdict)
-          nodes, edges = tiny_load(fields['file'][0])
-          self._set_headers()
-          self.end_headers()
-          return self.wfile.write(json.dumps({ "nodes": list(map(transform_node, nodes)), "edges": edges }, indent=None).encode('utf-8'))
+    ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
+    pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
+    assert ctype == 'multipart/form-data'
+    fields = cgi.parse_multipart(self.rfile, pdict)
+    nodes, edges = tiny_load(fields['file'][0])
+    nodes = list(map(transform_node, nodes))
+    self._set_headers()
+    self.end_headers()
+    return self.wfile.write(json.dumps({ "nodes": nodes, "edges": edges }, indent=None).encode('utf-8'))
+
   def do_GET(self):
-    parsed_path = urlparse(self.path)
-    query_params = parse_qs(parsed_path.query)
-    test = query_params.get("test", [''])[0]
-    nodes, edges = self._tiny()
+    nodes, edges = _test_adam()
     self._set_headers()
     self.end_headers()
     self.wfile.write(json.dumps({ "nodes": nodes, "edges": edges }, indent=None).encode('utf-8'))
     return
-
-  def _tiny(self):
-    a = Tensor([1,2,3,4])
-    b = Tensor([1,2,3,4])
-    c = Tensor([1,2,3,4])
-
-    out0 = a + b
-    out1 = out0 + b
-    out2 = out0 + out1 + c
-    sched = create_schedule([out0.lazydata, out1.lazydata, out2.lazydata])
-    nodes, edges = save_schedule_graph(sched)
-    return list(map(transform_node, pickle.loads(nodes))), pickle.loads(edges)
 
 def save_schedule_graph(schedule: List[ScheduleItem]):
   buf_schedules = {out: si for si in schedule for out in si.outputs}

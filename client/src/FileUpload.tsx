@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { GraphData } from "./types";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ export default function FileUploader({
 }: {
   setGraph: (g: GraphData) => void;
 }) {
+  const [file, setFile] = useState<any>(null);
   const { mutateAsync } = useMutation({
     mutationKey: ["upload"],
     mutationFn: async (formData: FormData) => {
@@ -27,10 +29,12 @@ export default function FileUploader({
 
   const handleUpload = async (e: any) => {
     const file = e.target.files[0];
+    setFile(file);
     if (file == null) return;
     const formData = new FormData();
     formData.append("file", file);
     await mutateAsync(formData);
+    setFile(null);
   };
 
   return (

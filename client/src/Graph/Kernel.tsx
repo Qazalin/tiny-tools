@@ -42,12 +42,17 @@ export default function Kernel({ si, onClose }: KernelProps) {
               ))}
             </div>
           )}
+          {
+              si.inputs.length !== 0 && (
+
           <div>
             <p className="text-lg">inputs:</p>
             {si.inputs.map((inp, i) => (
               <p key={`inp-${i}` + inp}>{inp}</p>
             ))}
           </div>
+              )
+          }
           <div>
             <p className="text-lg">outputs:</p>
             {si.outputs.map((out, i) => (
