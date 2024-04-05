@@ -2,8 +2,7 @@ import json, functools, pickle, io, importlib, cgi
 from http.server import BaseHTTPRequestHandler
 from tinygrad.codegen.kernel import Device
 
-from tinygrad.codegen.linearizer import Linearizer
-from tinygrad.helpers import NOOPT, to_function_name
+from tinygrad.helpers import to_function_name
 from tinygrad.ops import LoadOps
 from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.features.graph import _tree
@@ -41,12 +40,11 @@ def tiny_load(s): return TinyUnpickler(io.BytesIO(s)).load()
 def transform_node(src):
   node = {"id": src["id"], "inputs": src["inputs"], "outputs": src["outputs"]}
   if src["ast"][0].op not in LoadOps:
-    NOOPT.value = 1
-    lin = Device["GPU"].get_runner(*src["ast"])
-    prg, name = lin.prg, lin.name
+    lin = Device[Device.DEFAULT].get_linearizer(*src["ast"])
+    lin.linearize()
+    name = to_function_name(lin.name)
     node["fill"] = "red" if name.startswith("r") else "blue"
-    #node["code"] = OpenCLRenderer(name, lin.uops)
-    node["code"] = prg
+    node["code"] = OpenCLRenderer(name, lin.uops)
     node["label"] = name
     node["shape"] = str(src["ast"][0].arg.st.shape)
     node["ast"] = "\n".join(["\n".join([f"{str(i).rjust(3)} {s}" for i,s in enumerate(_tree(op, {}, [-1]))]) for op in src["ast"]])
