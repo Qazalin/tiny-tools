@@ -23,7 +23,7 @@ export default function Kernel({ si, onClose }: KernelProps) {
   return (
     <div className="bg-black bg-opacity-65 data-[state=open]:animate-overlayShow fixed inset-0 h-full w-full flex items-center justify-center z-40">
       <div
-        className="relative max-h-[85vh] max-w-[50vw] focus:outline-none bg-gray-900 p-4 rounded-md overflow-scroll z-50 flex flex-col space-y-1"
+        className="relative max-h-[85vh] max-w-[50vw] focus:outline-none bg-[#111113] p-4 rounded-md overflow-scroll z-50 flex flex-col space-y-1"
         ref={ref}
       >
         <div className="self-end">
@@ -42,21 +42,26 @@ export default function Kernel({ si, onClose }: KernelProps) {
               ))}
             </div>
           )}
-          {
-              si.inputs.length !== 0 && (
-
-          <div>
-            <p className="text-lg">inputs:</p>
-            {si.inputs.map((inp, i) => (
-              <p key={`inp-${i}` + inp}>{inp}</p>
-            ))}
-          </div>
-              )
-          }
+          <div>shape: {si.shape}</div>
+          {si.inputs.length !== 0 && (
+            <div>
+              <p className="text-lg">inputs:</p>
+              {si.inputs.map((inp, i) => (
+                <p key={`inp-${i}` + inp}>{inp}</p>
+              ))}
+            </div>
+          )}
           <div>
             <p className="text-lg">outputs:</p>
             {si.outputs.map((out, i) => (
               <p key={`out-${i}` + out}>{out}</p>
+            ))}
+          </div>
+          <div>
+            {si.ast?.split("\n").map((s) => (
+              <p className="whitespace-pre" key={s}>
+                {s}
+              </p>
             ))}
           </div>
         </div>

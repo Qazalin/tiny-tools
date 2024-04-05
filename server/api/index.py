@@ -1,10 +1,12 @@
 import json, functools, pickle, io, importlib, cgi
 from http.server import BaseHTTPRequestHandler
+from tinygrad.codegen.kernel import Device
 
 from tinygrad.codegen.linearizer import Linearizer
-from tinygrad.helpers import to_function_name
+from tinygrad.helpers import NOOPT, to_function_name
 from tinygrad.ops import LoadOps
 from tinygrad.renderer.cstyle import OpenCLRenderer
+from tinygrad.features.graph import _tree
 
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
@@ -36,20 +38,19 @@ class TinyUnpickler(pickle.Unpickler):
 
 def tiny_load(s): return TinyUnpickler(io.BytesIO(s)).load()
 
-@functools.lru_cache(None)
-def linearize_si(ast):
-  lin = Linearizer(*ast)
-  lin.linearize()
-  return lin, to_function_name(lin.name)
-
 def transform_node(src):
   node = {"id": src["id"], "inputs": src["inputs"], "outputs": src["outputs"]}
   if src["ast"][0].op not in LoadOps:
-    lin, name = linearize_si(src["ast"])
-    node["fill"] = "red" if name.startswith("r_") else "blue"
-    node["code"] = OpenCLRenderer(name, lin.uops)
+    NOOPT.value = 1
+    lin = Device["GPU"].get_runner(*src["ast"])
+    prg, name = lin.prg, lin.name
+    node["fill"] = "red" if name.startswith("r") else "blue"
+    #node["code"] = OpenCLRenderer(name, lin.uops)
+    node["code"] = prg
     node["label"] = name
-    node["shape"] = "" # TODO
+    node["shape"] = str(src["ast"][0].arg.st.shape)
+    node["ast"] = "\n".join(["\n".join([f"{str(i).rjust(3)} {s}" for i,s in enumerate(_tree(op, {}, [-1]))]) for op in src["ast"]])
+
   else:
     node["fill"] = "white"
     node["code"], node["shape"] = "", ""

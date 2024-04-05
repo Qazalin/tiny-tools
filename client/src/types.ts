@@ -5,5 +5,6 @@ export type ScheduleNode = GraphNode & {
   inputs: string[];
   outputs: string[];
   shape: string;
+  ast?: string;
 };
 export type GraphData = { nodes: ScheduleNode[]; edges: GraphEdge[] };
