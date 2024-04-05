@@ -1,9 +1,10 @@
 import json, functools, pickle, io, importlib, cgi
 from http.server import BaseHTTPRequestHandler
 from tinygrad.codegen.kernel import Device
+from tinygrad.codegen.linearizer import Linearizer
 
 from tinygrad.helpers import to_function_name
-from tinygrad.ops import LoadOps
+from tinygrad.ops import LazyOp, LoadOps
 from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.features.graph import _tree
 
@@ -40,8 +41,7 @@ def tiny_load(s): return TinyUnpickler(io.BytesIO(s)).load()
 def transform_node(src):
   node = {"id": src["id"], "inputs": src["inputs"], "outputs": src["outputs"]}
   if src["ast"][0].op not in LoadOps:
-    lin = Device[Device.DEFAULT].get_linearizer(*src["ast"])
-    lin.linearize()
+    lin = cached_linearize(*src["ast"])
     name = to_function_name(lin.name)
     node["fill"] = "red" if name.startswith("r") else "blue"
     node["code"] = OpenCLRenderer(name, lin.uops)
@@ -54,3 +54,9 @@ def transform_node(src):
     node["code"], node["shape"] = "", ""
     node["label"] = str(src["ast"][0].op)
   return node
+
+@functools.lru_cache(None)
+def cached_linearize(*ast:LazyOp) -> Linearizer:
+  lin= Linearizer(*ast)
+  lin.linearize()
+  return lin
