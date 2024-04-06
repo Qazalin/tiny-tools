@@ -1,4 +1,4 @@
-import json, functools, pickle, io, importlib, cgi
+import json, functools, pickle, io, importlib, cgi, os
 from http.server import BaseHTTPRequestHandler
 from tinygrad.codegen.kernel import Device
 from tinygrad.codegen.linearizer import Linearizer
@@ -29,6 +29,11 @@ class handler(BaseHTTPRequestHandler):
     self._set_headers()
     self.end_headers()
     return self.wfile.write(json.dumps({ "nodes": list(map(transform_node, nodes)), "edges": edges }, indent=None).encode('utf-8'))
+
+  def do_GET(self):
+    self._set_headers()
+    env_var = os.getenv("MY_TEST")
+    return self.wfile.write(json.dumps({ "ok": True, "env_var": env_var }, indent=None).encode('utf-8'))
 
 class TinyUnpickler(pickle.Unpickler):
   def find_class(self, module: str, name: str):

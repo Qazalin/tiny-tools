@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GraphCanvas, GraphCanvasRef, useSelection } from "reagraph";
 import KernelModal from "./Kernel";
 import { GraphData, ScheduleNode } from "../types";
@@ -22,13 +22,30 @@ function Graph({ data }: { data: GraphData }) {
     pathHoverType: "all",
   });
 
+  const [nodes, setNodes] = useState<ScheduleNode[]>([]);
+  useEffect(() => {
+    const nodes = data.nodes.map((si) => ({
+      ...si,
+      /*
+      fill:
+        si.shape == "(2, 56, 56, 64, 1)"
+          ? "red"
+          : si.code.includes("void r")
+            ? "pink"
+            : "gray",
+            */
+    }));
+
+    setNodes(nodes);
+  }, [data]);
+
   return (
     <>
       <GraphCanvas
         ref={graphRef}
-        nodes={data.nodes}
+        nodes={nodes}
         edges={data.edges}
-        animated={false}
+        animated={true}
         theme={graphTheme}
         layoutType="treeTd2d"
         selections={selections}
