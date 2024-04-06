@@ -11,7 +11,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "reagraph": "^4.15.26",
+    "reagraph": "4.15.27",
     "typescript": "^4.9.5"
   },
   "scripts": {
