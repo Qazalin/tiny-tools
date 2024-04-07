@@ -1,12 +1,24 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { GraphCanvas, GraphCanvasRef, useSelection } from "reagraph";
 import KernelModal from "./Kernel";
 import { GraphData, ScheduleNode } from "../types";
 import { graphTheme } from "./theme";
+import { Filters, useFilters } from "./Filters";
 
-function Graph({ data }: { data: GraphData }) {
+function Graph({
+  data,
+  filters,
+}: {
+  data: GraphData;
+  filters: Filters | null;
+}) {
   const [focusedSI, setFocusedSI] = useState<ScheduleNode | null>(null);
   const graphRef = useRef<GraphCanvasRef | null>(null);
+  const { nodes, edges } = useFilters({
+    ref: graphRef,
+    data,
+    filters,
+  });
   const {
     selections,
     actives,
@@ -22,29 +34,12 @@ function Graph({ data }: { data: GraphData }) {
     pathHoverType: "all",
   });
 
-  const [nodes, setNodes] = useState<ScheduleNode[]>([]);
-  useEffect(() => {
-    const nodes = data.nodes.map((si) => ({
-      ...si,
-      /*
-      fill:
-        si.shape == "(2, 56, 56, 64, 1)"
-          ? "red"
-          : si.code.includes("void r")
-            ? "pink"
-            : "gray",
-            */
-    }));
-
-    setNodes(nodes);
-  }, [data]);
-
   return (
     <>
       <GraphCanvas
         ref={graphRef}
         nodes={nodes}
-        edges={data.edges}
+        edges={edges}
         animated={true}
         theme={graphTheme}
         layoutType="treeTd2d"
@@ -60,4 +55,7 @@ function Graph({ data }: { data: GraphData }) {
     </>
   );
 }
-export default React.memo(Graph, (prev, next) => prev.data === next.data);
+
+export default React.memo(Graph, (prev, next) => {
+  return prev.data === next.data && prev.filters === next.filters;
+});

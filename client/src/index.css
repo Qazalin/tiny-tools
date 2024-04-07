@@ -6,3 +6,9 @@ html {
     background-color: black;
     color: white;
 }
+
+@layer components {
+    input {
+        @apply rounded-md bg-neutral-900 text-white outline-none px-2 py-1;
+    }
+}
