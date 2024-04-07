@@ -1,23 +1,46 @@
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import FileUploader from "./FileUpload";
 import FiltersPanel from "./Filters";
 import Graph from "./Graph";
 import { Filters } from "./Graph/Filters";
+import Share from "./Share";
+import Spinner from "./Spinner";
 import { GraphData } from "./types";
 
 export default function Base() {
-  const [graph, setGraph] = useState<GraphData | null>(null);
   const [filters, setFilters] = useState<Filters | null>(null);
+  const [graph, setGraph] = useState<GraphData | null>(null);
+  const id = new URLSearchParams(window.location.search).get("id");
+  const { data, isLoading } = useQuery<GraphData>({
+    queryKey: [`?id=${id}`],
+    enabled: id != null,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  useEffect(() => {
+    if (id == null || data == null) return;
+    setGraph(data);
+  }, [data, id]);
+
+  function updateGraph(data: GraphData) {
+    const url = new URL(window.location as any);
+    window.history.pushState({}, "", `${url.origin}${url.pathname}`);
+    setGraph(data);
+  }
 
   return (
     <div className="flex items-center justify-center min-w-[100vw] min-h-screen">
-      {graph == null ? (
+      {id != null && (isLoading || graph == null) ? (
+        <Spinner className="w-8 h-8" />
+      ) : graph == null ? (
         <FileUploader setGraph={setGraph} showTip />
       ) : (
         <>
           <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
             <div className="flex space-x-2">
-              <FileUploader setGraph={setGraph} />
+              <FileUploader setGraph={updateGraph} showTip={id != null} />
             </div>
             <FiltersPanel filters={filters} setFilters={setFilters} />
           </div>

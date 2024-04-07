@@ -18,6 +18,10 @@ export function useFilters({
 }): GraphData {
   const [nodes, setNodes] = useState<GraphData["nodes"]>(data.nodes);
   const [edges, setEdges] = useState<GraphData["edges"]>(data.edges);
+  useEffect(() => {
+    setNodes(data.nodes);
+    setEdges(data.edges);
+  }, [data]);
 
   function isTarget(node: ScheduleNode) {
     if (filters?.shape != null) return node.shape.startsWith(filters.shape);

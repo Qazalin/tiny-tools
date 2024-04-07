@@ -10,6 +10,7 @@ export default function FiltersPanel({
 }) {
   return (
     <div className="bg-neutral-800 rounded-md border border-neutral-800 p-2 space-y-3 flex items-center flex-col w-fit">
+      <p className="text-base self-start mb-2">Filters</p>
       <div className="space-x-2 flex-1">
         <label>shape</label>
         <input

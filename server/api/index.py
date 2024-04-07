@@ -2,8 +2,7 @@ import json, functools, pickle, io, importlib, cgi, os, redis, uuid
 from urllib.parse import urlparse, parse_qs
 from typing import cast
 from http.server import BaseHTTPRequestHandler
-from tinygrad.codegen.kernel import Device
-from tinygrad.codegen.linearizer import Any, Linearizer
+from tinygrad.codegen.linearizer import Linearizer
 
 from tinygrad.helpers import to_function_name
 from tinygrad.ops import LazyOp, LoadOps
@@ -48,7 +47,7 @@ class handler(BaseHTTPRequestHandler):
     query_id = query_params.get('id', [None])[0]
     if query_id is None: return self.wfile.write(json.dumps({ "ok": True }, indent=None).encode('utf-8'))
     r = redis.Redis(host=getenv("REDIS_HOST"), port=33331, password=getenv("REDIS_PASSWORD"), ssl=True)
-    return self.wfile.write(cast(str, r.get(query_id)).encode('utf-8'))
+    return self.wfile.write(cast(bytes, r.get(query_id)))
 
 def getenv(name: str):
   assert (val:=os.getenv(name))

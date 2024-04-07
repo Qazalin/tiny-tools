@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { GraphData } from "./types";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
@@ -66,18 +66,17 @@ export default function FileUploader({
         <span className="text-xl">Import</span>
       </label>
       {showTip && (
-
-      <p>
-        Tip: checkout{" "}
-        <a
-          href="https://github.com/Qazalin/tinygrad/tree/tool-0"
-          target="_blank"
-          className="text-blue-500 underline underline-offset-1"
-        >
-          this branch
-        </a>
-        , run tinygrad with <code>GRAPHSCHEDULE=1</code>
-      </p>
+        <p>
+          Tip: checkout{" "}
+          <a
+            href="https://github.com/Qazalin/tinygrad/tree/tool-0"
+            target="_blank"
+            className="text-blue-500 underline underline-offset-1"
+          >
+            this branch
+          </a>
+          , run tinygrad with <code>GRAPHSCHEDULE=1</code>
+        </p>
       )}
     </div>
   );
