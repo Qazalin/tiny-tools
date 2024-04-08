@@ -21,16 +21,6 @@ class handler(BaseHTTPRequestHandler):
   def do_OPTIONS(self):
     self._set_headers()
 
-  def do_POST(self):
-    ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-    pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-    assert ctype == 'multipart/form-data'
-    fields = cgi.parse_multipart(self.rfile, pdict)
-    nodes, edges = tiny_load(fields['file'][0])
-    self._set_headers()
-    self.end_headers()
-    return self.wfile.write(json.dumps({ "nodes": list(map(transform_node, nodes)), "edges": edges }, indent=None).encode('utf-8'))
-
   def do_PUT(self):
     content_length = int(self.headers['Content-Length'])
     data = json.loads(self.rfile.read(content_length))

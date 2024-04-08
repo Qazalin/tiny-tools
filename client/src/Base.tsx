@@ -33,18 +33,15 @@ export default function Base() {
     <div className="flex items-center justify-center min-w-[100vw] min-h-screen">
       {id != null && (isLoading || graph == null) ? (
         <Spinner className="w-8 h-8" />
-      ) : graph == null ? (
-        <FileUploader setGraph={setGraph} showTip />
       ) : (
-        <>
-          <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
-            <div className="flex space-x-2">
-              <FileUploader setGraph={updateGraph} showTip={id != null} />
+        graph != null && (
+          <>
+            <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
+              <FiltersPanel filters={filters} setFilters={setFilters} />
             </div>
-            <FiltersPanel filters={filters} setFilters={setFilters} />
-          </div>
-          <Graph filters={filters} data={graph} />
-        </>
+            <Graph filters={filters} data={graph} />
+          </>
+        )
       )}
     </div>
   );
