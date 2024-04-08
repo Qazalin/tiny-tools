@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 tinygrad = {git = "https://github.com/tinygrad/tinygrad.git", ref = "master"}
+redis = "*"
 
 [requires]
 python_version = "3.9"
