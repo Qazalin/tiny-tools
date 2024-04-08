@@ -6,6 +6,7 @@ import { GraphData, ScheduleNode } from "../types";
 export type Filters = Partial<{
   shape: string;
   code: string;
+  ast: string;
 }>;
 export function useFilters({
   ref,
@@ -24,13 +25,17 @@ export function useFilters({
   }, [data]);
 
   function isTarget(node: ScheduleNode) {
-    if (filters?.shape != null) return node.shape.startsWith(filters.shape);
-    if (filters?.code != null) return node.code.includes(filters.code);
-    return true;
+    const conds = [];
+    if (filters?.shape) conds.push(node.shape.startsWith(filters.shape));
+    if (filters?.code) conds.push(node.code.includes(filters.code));
+    if (filters?.ast) conds.push(node.ast?.includes(filters.ast));
+    if (conds.length === 0) return;
+    return conds.every((c) => c);
   }
 
   function reduceNodes(graph: Graph) {
     const targetNodes = data.nodes.filter(isTarget);
+    if (targetNodes.length == 0) return;
     const adjs = getAdjacents(
       graph,
       targetNodes.map((n) => n.id),
@@ -41,8 +46,7 @@ export function useFilters({
     );
     const newNodes: GraphData["nodes"] = adjs.nodes.map((nid) => {
       const node = data.nodes.find((n) => n.id === nid)!;
-      return {
-        ...node,
+      return { ...node,
         fill: isTarget(node) ? "green" : "gray",
       };
     });
@@ -60,10 +64,12 @@ export function useFilters({
       return;
     }
 
-    const newNodes = data.nodes.map((node) => ({
-      ...node,
-      fill: isTarget(node) ? "red" : "gray",
-    }));
+    const newNodes = data.nodes.map((node) => {
+      const target = isTarget(node);
+      if (target == null) return node;
+      return { ...node, fill: target ? "red" : "gray" };
+    });
+
     setNodes(newNodes);
   }, [data, ref, filters]);
   return { nodes, edges };

@@ -42,7 +42,7 @@ export default function Kernel({ si, onClose }: KernelProps) {
               ))}
             </div>
           )}
-          <div>shape: {si.shape}</div>
+          {si.shape && <div>shape: {si.shape}</div>}
           {si.inputs.length !== 0 && (
             <div>
               <p className="text-lg">inputs:</p>

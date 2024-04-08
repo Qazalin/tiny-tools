@@ -4,7 +4,6 @@ import FileUploader from "./FileUpload";
 import FiltersPanel from "./Filters";
 import Graph from "./Graph";
 import { Filters } from "./Graph/Filters";
-import Share from "./Share";
 import Spinner from "./Spinner";
 import { GraphData } from "./types";
 
