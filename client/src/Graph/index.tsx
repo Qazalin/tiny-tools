@@ -30,7 +30,6 @@ function Graph({
     ref: graphRef,
     nodes: data.nodes,
     edges: data.edges,
-    pathSelectionType: "all",
     pathHoverType: "all",
   });
 
