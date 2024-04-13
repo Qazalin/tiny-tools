@@ -1,6 +1,5 @@
-import Graph from "graphology";
 import { RefObject, useEffect, useState } from "react";
-import { getAdjacents, GraphCanvasRef } from "reagraph";
+import { GraphCanvasRef } from "reagraph";
 import { GraphData, ScheduleNode } from "../types";
 
 export type Filters = Partial<{
@@ -15,9 +14,9 @@ export function useFilters({
 }: {
   ref: RefObject<GraphCanvasRef | null>;
   filters: Filters | null;
-  data: GraphData;
-}): GraphData {
-  const [nodes, setNodes] = useState<GraphData["nodes"]>(data.nodes);
+  data: GraphData<ScheduleNode>;
+}): GraphData<ScheduleNode> {
+  const [nodes, setNodes] = useState<ScheduleNode[]>(data.nodes);
   const [edges, setEdges] = useState<GraphData["edges"]>(data.edges);
   useEffect(() => {
     setNodes(data.nodes);
@@ -31,29 +30,6 @@ export function useFilters({
     if (filters?.ast) conds.push(node.ast?.includes(filters.ast));
     if (conds.length === 0) return;
     return conds.every((c) => c);
-  }
-
-  function reduceNodes(graph: Graph) {
-    const targetNodes = data.nodes.filter(isTarget);
-    if (targetNodes.length == 0) return;
-    const adjs = getAdjacents(
-      graph,
-      targetNodes.map((n) => n.id),
-      "all",
-    );
-    console.log(
-      `reduced node count from ${data.nodes.length} to ${adjs.nodes.length}`,
-    );
-    const newNodes: GraphData["nodes"] = adjs.nodes.map((nid) => {
-      const node = data.nodes.find((n) => n.id === nid)!;
-      return { ...node,
-        fill: isTarget(node) ? "green" : "gray",
-      };
-    });
-    const newEdges: GraphData["edges"] = adjs.edges.map(
-      (eid) => data.edges.find((e) => e.id === eid)!,
-    );
-    return [newNodes, newEdges];
   }
 
   useEffect(() => {

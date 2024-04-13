@@ -9,7 +9,7 @@ function Graph({
   data,
   filters,
 }: {
-  data: GraphData;
+  data: GraphData<ScheduleNode>;
   filters: Filters | null;
 }) {
   const [focusedSI, setFocusedSI] = useState<ScheduleNode | null>(null);

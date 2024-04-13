@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import FileUploader from "./FileUpload";
 import FiltersPanel from "./Filters";
-import Graph from "./Graph";
+import ScheduleGraph from "./Graph";
+import FuzzGraph from "./Fuzzer";
 import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
-import { GraphData } from "./types";
+import { FuzzNode, GraphData, ScheduleNode } from "./types";
 
 export default function Base() {
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -37,9 +38,19 @@ export default function Base() {
         graph != null && (
           <>
             <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
-              <FiltersPanel filters={filters} setFilters={setFilters} />
+              {"code" in graph.nodes[0] && (
+                <FiltersPanel filters={filters} setFilters={setFilters} />
+              )}
             </div>
-            <Graph filters={filters} data={graph} />
+            {"code" in graph.nodes[0] ? (
+              <ScheduleGraph
+                data={graph as GraphData<ScheduleNode>}
+                filters={filters}
+              />
+            ) : <FuzzGraph 
+                data={graph as GraphData<FuzzNode>}
+
+            />}
           </>
         )
       )}
