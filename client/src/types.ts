@@ -7,7 +7,7 @@ export type ScheduleNode = GraphNode & {
   shape: string;
   ast?: string;
 };
-export type FuzzNode = GraphNode & { lb: string };
+export type FuzzNode = GraphNode & { lb: string; code: string };
 export type GraphData<T = ScheduleNode | FuzzNode> = {
   nodes: T[];
   edges: GraphEdge[];

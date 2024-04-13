@@ -1,5 +1,6 @@
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef } from "react";
+import CodeBlock from "../CodeBlock";
 import { ScheduleNode } from "../types";
 
 type KernelProps = { si: ScheduleNode | null; onClose: () => void };
@@ -33,15 +34,7 @@ export default function Kernel({ si, onClose }: KernelProps) {
           />
         </div>
         <div className="space-y-3 font-mono">
-          {si.code.length !== 0 && (
-            <div>
-              {si?.code.split("\n").map((s) => (
-                <p className="whitespace-pre" key={s}>
-                  {s}
-                </p>
-              ))}
-            </div>
-          )}
+          <CodeBlock code={si.code} />
           {si.shape && <div>shape: {si.shape}</div>}
           {si.inputs.length !== 0 && (
             <div>

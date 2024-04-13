@@ -7,6 +7,7 @@ import FuzzGraph from "./Fuzzer";
 import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
 import { FuzzNode, GraphData, ScheduleNode } from "./types";
+import Share from "./Share";
 
 export default function Base() {
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -38,19 +39,18 @@ export default function Base() {
         graph != null && (
           <>
             <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
-              {"code" in graph.nodes[0] && (
+              {"outputs" in graph.nodes[0] && (
                 <FiltersPanel filters={filters} setFilters={setFilters} />
               )}
             </div>
-            {"code" in graph.nodes[0] ? (
+            {"outputs" in graph.nodes[0] ? (
               <ScheduleGraph
                 data={graph as GraphData<ScheduleNode>}
                 filters={filters}
               />
-            ) : <FuzzGraph 
-                data={graph as GraphData<FuzzNode>}
-
-            />}
+            ) : (
+              <FuzzGraph data={graph as GraphData<FuzzNode>} />
+            )}
           </>
         )
       )}

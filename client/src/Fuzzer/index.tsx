@@ -7,6 +7,7 @@ import {
 } from "reagraph";
 import { FuzzNode, GraphData } from "../types";
 import { graphTheme } from "../Graph/theme";
+import CodeBlock from "../CodeBlock";
 
 function Graph({ data }: { data: GraphData<FuzzNode> }) {
   const graphRef = useRef<GraphCanvasRef | null>(null);
@@ -42,6 +43,10 @@ function Graph({ data }: { data: GraphData<FuzzNode> }) {
         <div className="bg-neutral-800 rounded-md border border-neutral-800 p-2 space-y-2 flex flex-col w-fit">
           <p className="text-base self-start">LazyBuffer</p>
           <p>{selectedNode ? selectedNode.lb : "-"}</p>
+          <CodeBlock
+            code={selectedNode?.code ?? ""}
+            className="max-w-96 max-h-56 overflow-scroll"
+          />
         </div>
       </div>
       <GraphCanvas
