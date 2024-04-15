@@ -38,11 +38,12 @@ export default function TinygradParser({
     from tinygrad.renderer.cstyle import OpenCLRenderer
     from tinygrad.features.graph import _tree
 
-    class DummyBuffer:
-      def __init__(self, *args, **kwargs) -> None: pass
+    class Buffer:
+      def __init__(self, device, size, dtype, *args, **kwargs) -> None: self.device, self.size, self.dtype = device, size, dtype
+      def __repr__(self): return f"<buf real:True device:{self.device} size:{self.size} dtype:{self.dtype}>"
     class TinyUnpickler(pickle.Unpickler):
       def find_class(self, module: str, name: str):
-        if module == "tinygrad.buffer" and name == "Buffer": return DummyBuffer
+        if module == "tinygrad.buffer" and name == "Buffer": return Buffer
         return getattr(importlib.import_module(module), name)
     with open("/sched.pkl", "rb") as f: s = f.read()
     schedule = TinyUnpickler(io.BytesIO(s)).load()
