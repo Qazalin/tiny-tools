@@ -1,42 +1,25 @@
 import { useRef } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
-import { GraphData } from "./types";
-import { useIsMutating, useMutation } from "@tanstack/react-query";
 import Spinner from "./Spinner";
 
 export default function FileUploader({
-  setGraph,
+  setPickleData,
+  isUploading,
   showTip = false,
 }: {
-  setGraph: (g: GraphData) => void;
+  setPickleData: (ab: ArrayBuffer) => void;
+  isUploading: boolean;
   showTip?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { mutateAsync } = useMutation({
-    mutationKey: ["upload"],
-    mutationFn: async (formData: FormData) => {
-      const res = await fetch(process.env.REACT_APP_API_URL as string, {
-        method: "POST",
-        body: formData,
-      });
-      const data: GraphData = await res.json();
-      return data;
-    },
-    onSuccess: (data) => {
-      setGraph(data);
-    },
-  });
-  const isUploading = useIsMutating({ mutationKey: ["upload"] }) > 0;
-
   const handleUpload = async (e: any) => {
     const file = e.target.files[0];
     if (file == null) return;
-    const formData = new FormData();
-    formData.append("file", file);
-    await mutateAsync(formData);
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
+    const reader = new FileReader();
+    reader.onload = function (event: any) {
+      setPickleData(event.target.result as ArrayBuffer);
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   return (
@@ -53,7 +36,6 @@ export default function FileUploader({
           type="file"
           onChange={handleUpload}
           ref={inputRef}
-          accept=".tiny"
           id="file-upload"
           disabled={isUploading}
           className="hidden"
@@ -67,15 +49,7 @@ export default function FileUploader({
       </label>
       {showTip && (
         <p>
-          Tip: checkout{" "}
-          <a
-            href="https://github.com/Qazalin/tinygrad/tree/tool-0"
-            target="_blank"
-            className="text-blue-500 underline underline-offset-1"
-          >
-            this branch
-          </a>
-          , run tinygrad with <code>GRAPHSCHEDULE=1</code>
+          Tip: upload a pickle of <code>List[ScheduleItem]</code>
         </p>
       )}
     </div>

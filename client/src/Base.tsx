@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import FileUploader from "./FileUpload";
 import FiltersPanel from "./Filters";
 import ScheduleGraph from "./Graph";
 import FuzzGraph from "./Fuzzer";
@@ -8,6 +7,7 @@ import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
 import { FuzzNode, GraphData, ScheduleNode } from "./types";
 import Share from "./Share";
+import TinygradParser from "./BasePy";
 
 export default function Base() {
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -35,24 +35,25 @@ export default function Base() {
     <div className="flex items-center justify-center min-w-[100vw] min-h-screen">
       {id != null && (isLoading || graph == null) ? (
         <Spinner className="w-8 h-8" />
+      ) : graph == null ? (
+        <TinygradParser setGraph={updateGraph} showTip />
       ) : (
-        graph != null && (
-          <>
-            <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
-              {"outputs" in graph.nodes[0] && (
-                <FiltersPanel filters={filters} setFilters={setFilters} />
-              )}
-            </div>
-            {"outputs" in graph.nodes[0] ? (
-              <ScheduleGraph
-                data={graph as GraphData<ScheduleNode>}
-                filters={filters}
-              />
-            ) : (
-              <FuzzGraph data={graph as GraphData<FuzzNode>} />
+        <>
+          <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
+            <TinygradParser setGraph={updateGraph} showTip={id != null}/>
+            {"outputs" in graph.nodes[0] && (
+              <FiltersPanel filters={filters} setFilters={setFilters} />
             )}
-          </>
-        )
+          </div>
+          {"outputs" in graph.nodes[0] ? (
+            <ScheduleGraph
+              data={graph as GraphData<ScheduleNode>}
+              filters={filters}
+            />
+          ) : (
+            <FuzzGraph data={graph as GraphData<FuzzNode>} />
+          )}
+        </>
       )}
     </div>
   );
