@@ -30,7 +30,7 @@ export default function TinygradParser({
     py.FS.writeFile("/sched.pkl", new Uint8Array(data), { encoding: "binary" });
 
     py.runPython(`
-    import pickle
+    import pickle, importlib, io
     import json, functools, re
     from tinygrad.ops import ScheduleItem, LazyOp, LoadOps
     from tinygrad.codegen.linearizer import Linearizer
@@ -38,7 +38,14 @@ export default function TinygradParser({
     from tinygrad.renderer.cstyle import OpenCLRenderer
     from tinygrad.features.graph import _tree
 
-    with open("/sched.pkl", "rb") as f: schedule = pickle.load(f)
+    class DummyBuffer:
+      def __init__(self, *args, **kwargs) -> None: pass
+    class TinyUnpickler(pickle.Unpickler):
+      def find_class(self, module: str, name: str):
+        if module == "tinygrad.buffer" and name == "Buffer": return DummyBuffer
+        return getattr(importlib.import_module(module), name)
+    with open("/sched.pkl", "rb") as f: s = f.read()
+    schedule = TinyUnpickler(io.BytesIO(s)).load()
 
     @functools.lru_cache(None)
     def cached_linearize(*ast:LazyOp) -> Linearizer:
