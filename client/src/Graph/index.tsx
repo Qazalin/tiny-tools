@@ -5,7 +5,7 @@ import { GraphData, ScheduleNode } from "../types";
 import { graphTheme } from "./theme";
 import { Filters, useFilters } from "./Filters";
 
-function Graph({
+export default function Graph({
   data,
   filters,
 }: {
@@ -54,7 +54,3 @@ function Graph({
     </>
   );
 }
-
-export default React.memo(Graph, (prev, next) => {
-  return prev.data === next.data && prev.filters === next.filters;
-});
