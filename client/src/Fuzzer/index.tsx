@@ -39,7 +39,7 @@ function Graph({ data }: { data: GraphData<FuzzNode> }) {
 
   return (
     <>
-      <div className="absolute top-20 left-5 z-10 flex flex-col space-y-4">
+      <div className="absolute top-28 left-5 z-10 flex flex-col space-y-4">
         <div className="bg-neutral-800 rounded-md border border-neutral-800 p-2 space-y-2 flex flex-col w-fit">
           <p className="text-base self-start">LazyBuffer</p>
           <p>{selectedNode ? selectedNode.lb : "-"}</p>

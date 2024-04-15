@@ -40,7 +40,7 @@ export default function Base() {
       ) : (
         <>
           <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
-            <TinygradParser setGraph={updateGraph} showTip={id != null}/>
+            <TinygradParser setGraph={updateGraph} showTip={id != null} />
             {"outputs" in graph.nodes[0] && (
               <FiltersPanel filters={filters} setFilters={setFilters} />
             )}
