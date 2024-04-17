@@ -37,6 +37,7 @@ export default function TinygradParser({
     from tinygrad.helpers import to_function_name
     from tinygrad.renderer.cstyle import OpenCLRenderer
     from tinygrad.features.graph import _tree
+    from tinygrad.device import CompilerOptions
 
     class Buffer:
       def __init__(self, device, size, dtype, *args, **kwargs) -> None: self.device, self.size, self.dtype = device, size, dtype
@@ -50,7 +51,7 @@ export default function TinygradParser({
 
     @functools.lru_cache(None)
     def cached_linearize(*ast:LazyOp) -> Linearizer:
-      lin= Linearizer(*ast)
+      lin= Linearizer(*ast, opts=CompilerOptions("GPU"))
       lin.linearize()
       return lin
 
