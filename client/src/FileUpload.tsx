@@ -1,5 +1,5 @@
 import { useDropzone } from "react-dropzone";
-import { useRef } from "react";
+import { useState } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import Spinner from "./Spinner";
 
@@ -12,11 +12,12 @@ export default function FileUploader({
   isUploading: boolean;
   showTip?: boolean;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [value, setValue] = useState("");
   const handleUpload = async (e: any) => {
     const file = e.target.files[0];
     if (file == null) return;
     fileToBuffer(file);
+    setValue("");
   };
 
   function fileToBuffer(file: File) {
@@ -27,7 +28,11 @@ export default function FileUploader({
     reader.readAsArrayBuffer(file);
   }
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (files) => fileToBuffer(files[0]),
+    onDrop: (files) => {
+      fileToBuffer(files[0]);
+      setValue("");
+    },
+    noClick: true,
   });
 
   return (
@@ -43,11 +48,11 @@ export default function FileUploader({
         <input
           type="file"
           onChange={handleUpload}
-          ref={inputRef}
           id="file-upload"
           disabled={isUploading}
           className="hidden"
           {...getInputProps()}
+          value={value}
         />
         {isUploading ? (
           <Spinner className="w-5 h-5 text-black mr-2" />
