@@ -24,9 +24,7 @@ export default function TinygradParser({
     await py.loadPackage("sqlite3");
     const micropip = py.pyimport("micropip");
     // this is actually tinygrad master
-    await micropip.install(
-      "https://storage.googleapis.com/tiny-tools/tinygrad-0.8.0-py3-none-any.whl",
-    );
+    await micropip.install("tinygrad-tools");
     py.FS.writeFile("/sched.pkl", new Uint8Array(data), { encoding: "binary" });
 
     py.runPython(`
