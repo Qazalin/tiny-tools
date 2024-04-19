@@ -1,3 +1,4 @@
+import { useDropzone } from "react-dropzone";
 import { useRef } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import Spinner from "./Spinner";
@@ -15,15 +16,22 @@ export default function FileUploader({
   const handleUpload = async (e: any) => {
     const file = e.target.files[0];
     if (file == null) return;
+    fileToBuffer(file);
+  };
+
+  function fileToBuffer(file: File) {
     const reader = new FileReader();
     reader.onload = function (event: any) {
       setPickleData(event.target.result as ArrayBuffer);
     };
     reader.readAsArrayBuffer(file);
-  };
+  }
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (files) => fileToBuffer(files[0]),
+  });
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" {...getRootProps()}>
       <label
         className={
           "px-5 h-[44px] bg-white rounded-md text-black flex items-center w-fit " +
@@ -39,13 +47,14 @@ export default function FileUploader({
           id="file-upload"
           disabled={isUploading}
           className="hidden"
+          {...getInputProps()}
         />
         {isUploading ? (
           <Spinner className="w-5 h-5 text-black mr-2" />
         ) : (
           <ArrowDownTrayIcon className="w-5 h-5 stroke-black mr-2 stroke-2" />
         )}
-        <span className="text-xl">Import</span>
+        <span className="text-xl">{isDragActive ? "Drop here" : "Import"}</span>
       </label>
       {showTip && (
         <p>
