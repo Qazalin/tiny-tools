@@ -63,7 +63,7 @@ export default function FileUploader({
       </label>
       {showTip && (
         <p>
-          Tip: upload a pickle of <code>List[ScheduleItem]</code>
+          Tip: run tinygrad with <code>SAVE_SCHEDULE=1</code>
         </p>
       )}
     </div>
