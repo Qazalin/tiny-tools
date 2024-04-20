@@ -6,7 +6,6 @@ import FuzzGraph from "./Fuzzer";
 import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
 import { FuzzNode, GraphData, ScheduleNode } from "./types";
-import Share from "./Share";
 import TinygradParser from "./BasePy";
 
 export default function Base() {
