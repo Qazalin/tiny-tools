@@ -32,7 +32,7 @@ def transform_node(src):
   if src["ast"][0].op not in LoadOps:
     lin = cached_linearize(*src["ast"])
     name = to_function_name(lin.name)
-    node["fill"] = "green" if bool(re.search(r'r\d', name)) else "red" if name.startswith("r") else "green" if bool(re.search(r'E\d', name)) else "blue"
+    node["fill"] = "green" if bool(re.search(r'r\d', name)) else "red" if name.startswith("r") else "green" if bool(re.search(r'E\d', name)) else "yellow" if "ASSIGN" in str(src["outputs"]) else "blue"
     node["code"] = OpenCLRenderer(name, lin.uops)
     node["label"] = name
     node["shape"] = str(src["ast"][0].arg.st.shape)
