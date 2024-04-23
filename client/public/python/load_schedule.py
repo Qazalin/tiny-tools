@@ -11,8 +11,11 @@ from tinygrad.features.graph import _tree
 from tinygrad.device import CompilerOptions
 
 class Buffer:
-  def __init__(self, device, size, dtype, *args, **kwargs) -> None: self.device, self.size, self.dtype, self.lb_refcount = device, size, dtype, 0
-  def __repr__(self): return f"<buf real:True device:{self.device} size:{self.size} dtype:{self.dtype}>"
+  def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
+    self.device, self.size, self.dtype, self.lb_refcount = device, size, dtype, 0
+    if opaque is not None: self._buf = opaque
+    if initial_value is not None: self._buf = initial_value
+  def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
 class TinyUnpickler(pickle.Unpickler):
   def find_class(self, module: str, name: str):
     if module == "tinygrad.buffer" and name == "Buffer": return Buffer
@@ -64,7 +67,7 @@ else:
     nodes.append(_parse(i, ps))
     for x in graph[key]:
       if x not in buf_schedules: continue
-      source_index = list(prescheduled).index(buf_schedules[x].outputs[0]) + 1
-      edge_id = f"{source_index}-{i+1}"
-      edges.append({'source': str(source_index), 'target': str(i+1), 'id': edge_id, 'label': edge_id})
+      child_idx = list(prescheduled).index(buf_schedules[x].outputs[0]) + 1
+      edge_id = f"{i+1}-{child_idx}-"
+      edges.append({'source': str(i+1), 'target': str(child_idx), 'id': edge_id, 'label': edge_id})
 with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges}))
