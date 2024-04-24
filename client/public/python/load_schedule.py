@@ -60,14 +60,13 @@ if isinstance(data, List) and len(data) and isinstance(data[0], ScheduleItem):
       edge_id = f"{source_index}-{i+1}"
       edges.append({'source': str(source_index), 'target': str(i+1), 'id': edge_id, 'label': edge_id})
 else:
-  graph: Dict[LazyBuffer, List[LazyBuffer]] = data[0]
-  prescheduled: Dict[LazyBuffer, _LBScheduleItem] = data[1]
-  buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
-  for i, (key, ps) in enumerate(prescheduled.items()):
-    nodes.append(_parse(i, ps))
-    for x in graph[key]:
-      if x not in buf_schedules: continue
-      child_idx = list(prescheduled).index(buf_schedules[x].outputs[0]) + 1
-      edge_id = f"{i+1}-{child_idx}-"
-      edges.append({'source': str(i+1), 'target': str(child_idx), 'id': edge_id, 'label': edge_id})
+  for g_i, (graph, prescheduled) in enumerate(data):
+    buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
+    for i, (key, ps) in enumerate(prescheduled.items()):
+      nodes.append(_parse(i, ps))
+      for x in graph[key]:
+        if x not in buf_schedules: continue
+        child_idx = list(prescheduled).index(buf_schedules[x].outputs[0]) + 1
+        edge_id = f"{i+1}-{child_idx}-"
+        edges.append({'source': f"{i+1}", 'target': f"{child_idx}", 'id': edge_id, 'label': edge_id})
 with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges}))
