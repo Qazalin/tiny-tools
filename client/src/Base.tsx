@@ -7,6 +7,7 @@ import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
 import { FuzzNode, GraphData, ScheduleNode } from "./types";
 import TinygradParser from "./BasePy";
+import Legend from "./Legend";
 
 export default function Base() {
   const [filters, setFilters] = useState<Filters | null>(null);
@@ -41,7 +42,10 @@ export default function Base() {
           <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
             <TinygradParser setGraph={updateGraph} showTip={id != null} />
             {"outputs" in graph.nodes[0] && (
-              <FiltersPanel filters={filters} setFilters={setFilters} />
+              <div className="flex flex-col space-y-4">
+                <FiltersPanel filters={filters} setFilters={setFilters} />
+                <Legend />
+              </div>
             )}
           </div>
           {"outputs" in graph.nodes[0] ? (
