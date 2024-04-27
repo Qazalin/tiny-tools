@@ -1,9 +1,5 @@
-import pickle, importlib, io
-import json, functools, re
-from typing import Dict
-from tinygrad.lazy import LazyBuffer
+import functools, re, pickle, importlib, io, json
 from tinygrad.ops import List, ScheduleItem, LazyOp, LoadOps
-from tinygrad.engine.schedule import _LBScheduleItem
 from tinygrad.codegen.linearizer import Linearizer
 from tinygrad.helpers import to_function_name
 from tinygrad.renderer.cstyle import OpenCLRenderer
@@ -12,14 +8,10 @@ from tinygrad.device import CompilerOptions
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
-    self.device, self.size, self.dtype, self.lb_refcount = device, size, dtype, 0
+    self.device, self.size, self.dtype, self.lb_refcount = device, size, dtype, lb_refcount
     if opaque is not None: self._buf = opaque
     if initial_value is not None: self._buf = initial_value
   def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
-class TinyUnpickler(pickle.Unpickler):
-  def find_class(self, module: str, name: str):
-    if module == "tinygrad.buffer" and name == "Buffer": return Buffer
-    return getattr(importlib.import_module(module), name)
 
 @functools.lru_cache(None)
 def cached_linearize(*ast:LazyOp) -> Linearizer:
@@ -28,7 +20,7 @@ def cached_linearize(*ast:LazyOp) -> Linearizer:
   return lin
 
 def transform_node(src):
-  node = {"id": src["id"], "inputs": src["inputs"], "outputs": src["outputs"]}
+  node = {"id": src["id"], "inputs": src["inputs"], "outputs": src["outputs"], "ref": str(src["ref"])}
   if src["ast"][0].op not in LoadOps:
     lin = cached_linearize(*src["ast"])
     name = to_function_name(lin.name)
@@ -43,12 +35,15 @@ def transform_node(src):
     node["label"] = str(src["ast"][0].op)
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)) })
-
-with open("/sched.pkl", "rb") as f: s = f.read()
-data = TinyUnpickler(io.BytesIO(s)).load()
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": si.outputs[0].buffer.lb_refcount })
 
 nodes, edges = [], []
+class TinyUnpickler(pickle.Unpickler):
+  def find_class(self, module: str, name: str):
+    if module == "tinygrad.buffer" and name == "Buffer": return Buffer
+    return getattr(importlib.import_module(module), name)
+with open("/sched.pkl", "rb") as f: s = f.read()
+data = TinyUnpickler(io.BytesIO(s)).load()
 if isinstance(data, List) and len(data) and isinstance(data[0], ScheduleItem):
   schedule: List[ScheduleItem] = data
   buf_schedules = {out: si for si in schedule for out in si.outputs}
@@ -66,7 +61,9 @@ else:
       nodes.append(_parse(gi, i, ps))
       for x in graph[key]:
         if x not in buf_schedules: continue
+        child_sched = buf_schedules[x]
         child_idx = list(prescheduled).index(buf_schedules[x].outputs[0])
         edge_id = f"{gi}-{i+1}-{child_idx}"
         edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
+
 with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges}))

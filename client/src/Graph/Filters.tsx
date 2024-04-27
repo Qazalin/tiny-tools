@@ -6,6 +6,7 @@ export type Filters = Partial<{
   shape: string;
   code: string;
   ast: string;
+  ref: string;
 }>;
 export function useFilters({
   ref,
@@ -28,6 +29,7 @@ export function useFilters({
     if (filters?.shape) conds.push(node.shape.startsWith(filters.shape));
     if (filters?.code) conds.push(node.code.includes(filters.code));
     if (filters?.ast) conds.push(node.ast?.includes(filters.ast));
+    if (filters?.ref) conds.push(node.ref === filters.ref);
     if (conds.length === 0) return;
     return conds.every((c) => c);
   }

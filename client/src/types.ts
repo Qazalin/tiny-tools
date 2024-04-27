@@ -6,6 +6,7 @@ export type ScheduleNode = GraphNode & {
   outputs: string[];
   shape: string;
   ast?: string;
+  ref?: string;
 };
 export type FuzzNode = GraphNode & { lb: string; code: string };
 export type GraphData<T = ScheduleNode | FuzzNode> = {

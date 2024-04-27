@@ -30,6 +30,13 @@ export default function FiltersPanel({ filters, setFilters }: BaseProps) {
         name="AST contains"
         placeholder="eg. ADD"
       />
+      <Filter
+        filters={filters}
+        setFilters={setFilters}
+        field="ref"
+        name="Buffer ref"
+        placeholder=""
+      />
     </div>
   );
 }
@@ -51,7 +58,7 @@ function Filter({
         onChange={(e) => {
           setFilters((prev) => ({
             ...prev,
-            [field]: e.target.value.length != 0 ? e.target.value : undefined,
+            [field]: e.target.value.length !== 0 ? e.target.value : undefined,
           }));
         }}
       />
