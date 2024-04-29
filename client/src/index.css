@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 html {
-    background-color: black;
+    background-color: #0d1117;
     color: white;
 }
 
 @layer components {
     input {
-        @apply rounded-md bg-neutral-900 text-white outline-none px-2 py-1;
+        @apply rounded-md bg-[#18191B] text-white outline-none px-2 py-1;
     }
 }

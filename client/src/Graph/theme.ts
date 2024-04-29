@@ -1,5 +1,5 @@
 export const graphTheme = {
-  canvas: { background: "#000" },
+  canvas: { background: "#0d1117" },
   node: {
     fill: "#7CA0AB",
     activeFill: "#1DE9AC",

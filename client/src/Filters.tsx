@@ -7,7 +7,7 @@ type BaseProps = {
 };
 export default function FiltersPanel({ filters, setFilters }: BaseProps) {
   return (
-    <div className="bg-neutral-800 rounded-md border border-neutral-800 p-2 space-y-3 flex flex-col w-fit">
+    <div className="bg-[#212225] rounded-md p-2 space-y-3 flex flex-col w-fit">
       <p className="text-base self-start mb-2">Filters</p>
       <Filter
         filters={filters}
