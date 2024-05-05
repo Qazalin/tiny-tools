@@ -8,10 +8,11 @@ from tinygrad.device import CompilerOptions
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
-    self.device, self.size, self.dtype, self.lb_refcount = device, size, dtype, lb_refcount
+    self.device, self.size, self.dtype, self._lb_refcount = device, size, dtype, lb_refcount
     if opaque is not None: self._buf = opaque
     if initial_value is not None: self._buf = initial_value
   def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
+  def ref(self): return
 
 @functools.lru_cache(None)
 def cached_linearize(*ast:LazyOp) -> Linearizer:
@@ -35,7 +36,7 @@ def transform_node(src):
     node["label"] = str(src["ast"][0].op)
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": si.outputs[0].buffer.lb_refcount })
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": si.outputs[0].buffer._lb_refcount })
 
 nodes, edges = [], []
 class TinyUnpickler(pickle.Unpickler):
