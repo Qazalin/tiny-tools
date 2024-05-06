@@ -37,6 +37,7 @@ export default function Kernel({ si, onClose }: KernelProps) {
           <CodeBlock code={si.code} />
           {si.shape && <div>shape: {si.shape}</div>}
           {si.ref && parseInt(si.ref) > 10 && <div>ref: {si.ref}</div>}
+          {<div>forced_realize: {String(si.forced_realize)}</div>}
           {si.inputs.length !== 0 && (
             <div>
               <p className="text-lg">inputs:</p>

@@ -21,22 +21,28 @@ def cached_linearize(*ast:LazyOp) -> Linearizer:
   return lin
 
 def transform_node(src):
-  node = {"id": src["id"], "inputs": src["inputs"], "outputs": src["outputs"], "ref": str(src["ref"])}
+  node = {**src}
   if src["ast"][0].op not in LoadOps:
-    lin = cached_linearize(*src["ast"])
-    name = to_function_name(lin.name)
-    node["fill"] = "green" if bool(re.search(r'r\d', name)) else "red" if name.startswith("r") else "green" if bool(re.search(r'E\d', name)) else "yellow" if "ASSIGN" in str(src["outputs"]) else "blue"
-    node["code"] = OpenCLRenderer(name, lin.uops)
-    node["label"] = name
-    node["shape"] = str(src["ast"][0].arg.st.shape)
+    try:
+      lin = cached_linearize(*src["ast"])
+      name = to_function_name(lin.name)
+      node["fill"] = "green" if bool(re.search(r'r\d', name)) else "red" if name.startswith("r") else "green" if bool(re.search(r'E\d', name)) else "yellow" if "ASSIGN" in str(src["outputs"]) else "blue"
+      node["code"] = OpenCLRenderer(name, lin.uops)
+      node["label"] = name
+    except:
+      node["code"] = "idk"
+      node["label"] = "lol"
+      node["fill"] = "orange"
     node["ast"] = "\n".join(["\n".join([f"{str(i).rjust(3)} {s}" for i,s in enumerate(_tree(op, {}, [-1]))]) for op in src["ast"]])
+    node["shape"] = str(src["ast"][0].arg.st.shape)
   else:
     node["fill"] = "white"
     node["code"], node["shape"] = "", ""
     node["label"] = str(src["ast"][0].op)
+    node["ast"] = ""
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": si.outputs[0].buffer._lb_refcount })
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": str(si.outputs[0].buffer._lb_refcount), "forced_realize": si.outputs[0].forced_realize })
 
 nodes, edges = [], []
 class TinyUnpickler(pickle.Unpickler):

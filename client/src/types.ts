@@ -5,6 +5,7 @@ export type ScheduleNode = GraphNode & {
   inputs: string[];
   outputs: string[];
   shape: string;
+  forced_realize: boolean;
   ast?: string;
   ref?: string;
 };
