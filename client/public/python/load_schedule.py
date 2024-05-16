@@ -1,4 +1,5 @@
-import functools, re, pickle, importlib, io, json
+import functools, re, pickle, importlib, io, json, random
+from typing import Dict
 from tinygrad.ops import List, ScheduleItem, LazyOp, LoadOps
 from tinygrad.codegen.linearizer import Linearizer
 from tinygrad.helpers import to_function_name
@@ -20,6 +21,7 @@ def cached_linearize(*ast:LazyOp) -> Linearizer:
   lin.linearize()
   return lin
 
+ref_fills: Dict[int, str] = {}
 def transform_node(src):
   node = {**src}
   if src["ast"][0].op not in LoadOps:
@@ -29,7 +31,8 @@ def transform_node(src):
       node["fill"] = "green" if bool(re.search(r'r\d', name)) else "red" if name.startswith("r") else "green" if bool(re.search(r'E\d', name)) else "yellow" if "ASSIGN" in str(src["outputs"]) else "blue"
       node["code"] = OpenCLRenderer(name, lin.uops)
       node["label"] = name
-    except:
+    except Exception as e:
+      print("FAILED TO LINEARIZE", e, src["ast"])
       node["code"] = "idk"
       node["label"] = "lol"
       node["fill"] = "orange"
@@ -40,6 +43,10 @@ def transform_node(src):
     node["code"], node["shape"] = "", ""
     node["label"] = str(src["ast"][0].op)
     node["ast"] = ""
+  if int(node["ref"]) > 10:
+    if node["ref"] in ref_fills: node["fill"] = ref_fills[node["ref"]]
+    else: node["fill"] = ref_fills[node["ref"]] = "#" + hex(random.randrange(0, 2**24))[2:]
+  #else: node["fill"] = "white"
   return node
 
 def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": str(si.outputs[0].buffer._lb_refcount), "forced_realize": si.outputs[0].forced_realize })
