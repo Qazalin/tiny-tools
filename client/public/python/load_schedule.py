@@ -1,4 +1,5 @@
 import functools, re, pickle, importlib, io, json, random
+from collections import defaultdict
 from typing import Dict, List
 from tinygrad.ops import LazyOp, LoadOps
 from tinygrad.engine.schedule import ScheduleItem
@@ -7,6 +8,7 @@ from tinygrad.helpers import to_function_name
 from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.engine.graph import _tree
 from tinygrad.renderer import Renderer
+from tinygrad.codegen.uops import UOp
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
@@ -59,16 +61,17 @@ class TinyUnpickler(pickle.Unpickler):
     return getattr(importlib.import_module(module), name)
 with open("/sched.pkl", "rb") as f: s = f.read()
 data = TinyUnpickler(io.BytesIO(s)).load()
-if isinstance(data, List) and len(data) and isinstance(data[0], ScheduleItem):
-  schedule: List[ScheduleItem] = data
-  buf_schedules = {out: si for si in schedule for out in si.outputs}
-  for i, si in enumerate(schedule):
-    nodes.append(_parse(0, i, si))
-    for x in si.inputs:
-      if x not in buf_schedules: continue
-      source_index = schedule.index(buf_schedules[x]) + 1
-      edge_id = f"{source_index}-{i+1}"
-      edges.append({'source': str(source_index), 'target': str(i+1), 'id': edge_id, 'label': edge_id})
+
+if isinstance(data, defaultdict):
+  uops: List[UOp] = []
+  for n, adj in data.items():
+    uops.append(n)
+    uops.extend(adj)
+
+  for n, adj in data.items():
+    nodes.append({"id": str(uops.index(n)), "uop": str(n.uop), "vin": [str(_n) for _n in n.vin], "dtype": str(n.dtype), "arg": str(n.arg)})
+    for x in adj:
+      edges.append({"id": f"{uops.index(n)}_{uops.index(x)}", "source": str(uops.index(n)), "target": str(uops.index(x))})
 else:
   for gi, (graph, prescheduled) in enumerate(data):
     buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
@@ -81,4 +84,4 @@ else:
         edge_id = f"{gi}-{i+1}-{child_idx}"
         edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
 
-with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges}))
+with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges }))

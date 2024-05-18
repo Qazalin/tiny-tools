@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import FiltersPanel from "./Filters";
 import ScheduleGraph from "./Graph";
 import FuzzGraph from "./Fuzzer";
+import UOpGraph from "./UOp";
 import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
-import { FuzzNode, GraphData, ScheduleNode } from "./types";
+import { FuzzNode, GraphData, ScheduleNode, UOpNode } from "./types";
 import TinygradParser from "./BasePy";
 import Legend from "./Legend";
 
@@ -53,6 +54,8 @@ export default function Base() {
               data={graph as GraphData<ScheduleNode>}
               filters={filters}
             />
+          ) : "vin" in graph.nodes[0] ? (
+            <UOpGraph data={graph as GraphData<UOpNode>} />
           ) : (
             <FuzzGraph data={graph as GraphData<FuzzNode>} />
           )}

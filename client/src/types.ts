@@ -10,7 +10,13 @@ export type ScheduleNode = GraphNode & {
   ref?: string;
 };
 export type FuzzNode = GraphNode & { lb: string; code: string };
-export type GraphData<T = ScheduleNode | FuzzNode> = {
+export type UOpNode = GraphNode & {
+  uop: string;
+  dtype: string;
+  vin: string[];
+  arg: string;
+};
+export type GraphData<T = ScheduleNode | FuzzNode | UOpNode> = {
   nodes: T[];
   edges: GraphEdge[];
 };
