@@ -1,4 +1,4 @@
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, ClipboardIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef } from "react";
 import CodeBlock from "../CodeBlock";
 import { ScheduleNode } from "../types";
@@ -21,13 +21,22 @@ export default function Kernel({ si, onClose }: KernelProps) {
 
   if (si == null) return null;
 
+  function onCopy() {
+    document.getElementById("code-block");
+    navigator.clipboard.writeText(si!.code);
+  }
+
   return (
     <div className="bg-black bg-opacity-65 data-[state=open]:animate-overlayShow fixed inset-0 h-full w-full flex items-center justify-center z-40">
       <div
         className="relative max-h-[85vh] max-w-[50vw] focus:outline-none bg-[#111113] p-4 rounded-md overflow-scroll z-50 flex flex-col space-y-1"
         ref={ref}
       >
-        <div className="self-end">
+        <div className="self-end flex space-x-2">
+          <ClipboardIcon
+            className="w-5 h-5 cursor-pointer"
+            onClick={() => onCopy()}
+          />
           <XMarkIcon
             className="w-5 h-5 cursor-pointer"
             onClick={() => onClose()}
