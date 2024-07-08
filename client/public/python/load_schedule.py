@@ -1,6 +1,6 @@
 import functools, re, pickle, importlib, io, json, random
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from tinygrad.ops import LazyOp, LoadOps
 from tinygrad.engine.schedule import ScheduleItem
 from tinygrad.codegen.linearizer import Linearizer
@@ -9,6 +9,7 @@ from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.engine.graph import _tree
 from tinygrad.renderer import Renderer
 from tinygrad.codegen.uops import UOp
+from tinygrad.lazy import LazyBuffer
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
@@ -54,6 +55,9 @@ def transform_node(src):
 
 def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": str(si.outputs[0].buffer._lb_refcount), "forced_realize": si.outputs[0].forced_realize })
 
+def _parse2(gi: int, i:int, ast:LazyOp, output:LazyBuffer, inputs:List[LazyBuffer]):
+  return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': (ast, ), 'inputs': list(map(str, inputs)), 'outputs': [str(output)], "ref": str(output.buffer._lb_refcount), "forced_realize": output.forced_realize })
+
 nodes, edges = [], []
 class TinyUnpickler(pickle.Unpickler):
   def find_class(self, module: str, name: str):
@@ -74,14 +78,25 @@ if isinstance(data, defaultdict):
       edges.append({"id": f"{uops.index(n)}_{uops.index(x)}", "source": str(uops.index(n)), "target": str(uops.index(x))})
 else:
   for gi, (graph, prescheduled) in enumerate(data):
-    buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
-    for i, (key, ps) in enumerate(prescheduled.items()):
-      nodes.append(_parse(gi, i, ps))
-      for x in graph[key]:
-        if x not in buf_schedules: continue
-        child_sched = buf_schedules[x]
-        child_idx = list(prescheduled).index(buf_schedules[x].outputs[0])
-        edge_id = f"{gi}-{i+1}-{child_idx}"
-        edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
+    if isinstance(list(prescheduled.values())[0], tuple):
+      rev_children: Dict[LazyBuffer, Tuple[LazyOp, List[LazyBuffer]]] = prescheduled
+      for i, (output, (ast, inputs)) in enumerate(rev_children.items()):
+        nodes.append(_parse2(gi, i, ast, output, inputs))
+        for x in graph[output]:
+          if x not in rev_children: continue
+          child_sched = rev_children[x]
+          child_idx = list(rev_children).index(x)
+          edge_id = f"{gi}-{i+1}-{child_idx}"
+          edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
+    else:
+      buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
+      for i, (key, ps) in enumerate(prescheduled.items()):
+        nodes.append(_parse(gi, i, ps))
+        for x in graph[key]:
+          if x not in buf_schedules: continue
+          child_sched = buf_schedules[x]
+          child_idx = list(prescheduled).index(buf_schedules[x].outputs[0])
+          edge_id = f"{gi}-{i+1}-{child_idx}"
+          edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
 
 with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges }))
