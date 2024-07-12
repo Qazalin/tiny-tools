@@ -1,15 +1,13 @@
 import functools, re, pickle, importlib, io, json, random
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from tinygrad.ops import LazyOp, LoadOps
-from tinygrad.engine.schedule import ScheduleItem
 from tinygrad.codegen.linearizer import Linearizer
 from tinygrad.helpers import to_function_name
 from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.engine.graph import _tree
 from tinygrad.renderer import Renderer
 from tinygrad.codegen.uops import UOp
-from tinygrad.lazy import LazyBuffer
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
@@ -53,7 +51,7 @@ def transform_node(src):
   #else: node["fill"] = "white"
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si.outputs)), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize })
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si[0])), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize })
 
 nodes, edges = [], []
 class TinyUnpickler(pickle.Unpickler):

@@ -2,10 +2,10 @@ export default function Legend() {
   return (
     <div className="rounded-md p-2 space-y-3 flex flex-col w-fit">
       {[
-        ["Reduce", "red"],
-        ["Expand", "blue"],
-        ["Assign", "yellow"],
-        ["Multi output", "green"],
+        ["reduce", "red"],
+        ["elementwise", "blue"],
+        ["assign", "yellow"],
+        ["multi output", "green"],
       ].map((x, i) => (
         <div
           className="flex space-x-2 items-center w-full justify-between"
