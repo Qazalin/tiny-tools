@@ -1,4 +1,4 @@
-import  { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { GraphCanvas, GraphCanvasRef, useSelection } from "reagraph";
 import KernelModal from "./Kernel";
 import { GraphData, ScheduleNode } from "../types";
@@ -41,6 +41,7 @@ export default function Graph({
         edges={edges}
         animated={true}
         theme={graphTheme}
+        cameraMode="pan"
         layoutType="treeTd2d"
         selections={selections}
         actives={actives}

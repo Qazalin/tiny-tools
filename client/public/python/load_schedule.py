@@ -38,18 +38,22 @@ def transform_node(src):
       node["fill"] = "orange"
     node["ast"] = "\n".join(["\n".join([f"{str(i).rjust(3)} {s}" for i,s in enumerate(_tree(op, {}, [-1]))]) for op in src["ast"].src])
     node["shape"] = str(src["ast"].src[0].arg.st.shape)
+    node["full_shape"] = src["full_shape"]
+    node["metadata"] = src["metadata"]
   else:
     node["fill"] = "white"
     node["code"], node["shape"] = "", ""
     node["label"] = str(src["ast"].op)
     node["ast"] = ""
+    node["full_shape"] = ""
+    node["metadata"] = src["metadata"]
   if int(node["ref"]) > 10:
     if node["ref"] in ref_fills: node["fill"] = ref_fills[node["ref"]]
     else: node["fill"] = ref_fills[node["ref"]] = "#" + hex(random.randrange(0, 2**24))[2:]
   #else: node["fill"] = "white"
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si[0])), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize })
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si[0])), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize, "full_shape": str(si[1].full_shape), "metadata": str(si[4]) })
 
 def load_schedule(data):
   nodes, edges = [], []
