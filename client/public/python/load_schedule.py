@@ -1,4 +1,5 @@
-import functools, re, pickle, importlib, io, json, random
+import functools, re, importlib, io, json, random
+import dill as pickle
 from typing import Dict
 from tinygrad.ops import LazyOp, MetaOps
 from tinygrad.codegen.kernel import Kernel
