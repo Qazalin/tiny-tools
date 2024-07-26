@@ -19,7 +19,7 @@ class handler(BaseHTTPRequestHandler):
     query_params = parse_qs(urlparse(self.path).query)
     query_id = query_params.get('id', [None])[0]
     if query_id is None: return self.wfile.write(json.dumps({ "ok": True }, indent=None).encode('utf-8'))
-    r = redis.Redis(host=getenv("REDIS_HOST"), port=33331, password=getenv("REDIS_PASSWORD"), ssl=True)
+    r = redis.Redis(host=getenv("REDIS_HOST"), port=6379, password=getenv("REDIS_PASSWORD"), ssl=True)
     return self.wfile.write(cast(bytes, r.get(query_id)))
 
 def getenv(name: str):
