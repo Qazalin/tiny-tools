@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
     self.send_response(200)
-    self.send_header('Content-type', 'application/json')
+    self.send_header('Content-type', 'application/octet-stream')
     self.send_header('Access-Control-Allow-Origin', '*')
     self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT')
     self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
