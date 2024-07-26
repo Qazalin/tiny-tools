@@ -9,16 +9,25 @@ import Spinner from "./Spinner";
 import { FuzzNode, GraphData, ScheduleNode, UOpNode } from "./types";
 import TinygradParser from "./BasePy";
 import Legend from "./Legend";
+import { API_URL } from "./utils";
+import pako from "pako";
 
 export default function Base() {
   const [filters, setFilters] = useState<Filters | null>(null);
   const [graph, setGraph] = useState<GraphData | null>(null);
+  console.log(graph);
   const id = new URLSearchParams(window.location.search).get("id");
   const { data, isLoading } = useQuery<GraphData>({
     queryKey: [`?id=${id}`],
     enabled: id != null,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    queryFn: async ({ queryKey }) => {
+      const res = await fetch((API_URL + queryKey[0]) as string);
+      const data = await res.arrayBuffer();
+      const de = pako.inflate(new Uint8Array(data), { to: "string" });
+      return JSON.parse(de);
+    },
   });
 
   useEffect(() => {
@@ -41,7 +50,7 @@ export default function Base() {
       ) : (
         <>
           <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
-            <TinygradParser setGraph={updateGraph} showTip={id != null} />
+            <TinygradParser setGraph={updateGraph} />
             {"outputs" in graph.nodes[0] && (
               <div className="flex flex-col space-y-4">
                 <FiltersPanel filters={filters} setFilters={setFilters} />

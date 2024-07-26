@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import FileUploader from "./FileUpload";
 import { GraphData } from "./types";
-import { useFile, WS_URL } from "./utils";
+import { useFile } from "./utils";
 
 export default function TinygradParser({
   setGraph,
@@ -41,19 +41,6 @@ export default function TinygradParser({
     if (pickleData == null) return;
     r(pickleData);
   }, [pickleData]);
-
-  useEffect(() => {
-    if (WS_URL == null) return;
-    const ws = new WebSocket(WS_URL);
-    ws.onmessage = (e) => {
-      const reader = new FileReader();
-      reader.onload = function () {
-        setPickleData(new Uint8Array(this.result as ArrayBuffer));
-      };
-      reader.readAsArrayBuffer(e.data);
-    };
-    return () => ws.close();
-  }, []);
 
   return (
     <FileUploader
