@@ -1,2 +1,1 @@
 redis
-git+https://github.com/tinygrad/tinygrad.git
