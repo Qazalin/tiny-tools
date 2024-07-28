@@ -2,11 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import FiltersPanel from "./Filters";
 import ScheduleGraph from "./Graph";
-import FuzzGraph from "./Fuzzer";
-import UOpGraph from "./UOp";
 import { Filters } from "./Graph/Filters";
 import Spinner from "./Spinner";
-import { FuzzNode, GraphData, ScheduleNode, UOpNode } from "./types";
+import { GraphData, ScheduleNode } from "./types";
 import TinygradParser from "./BasePy";
 import Legend from "./Legend";
 import { API_URL } from "./utils";
@@ -51,23 +49,23 @@ export default function Base() {
         <>
           <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
             <TinygradParser setGraph={updateGraph} />
-            {"outputs" in graph.nodes[0] && (
-              <div className="flex flex-col space-y-4">
-                <FiltersPanel filters={filters} setFilters={setFilters} />
-                <Legend />
-              </div>
-            )}
+            <div className="flex flex-col space-y-4">
+              {graph != null && (
+                <div className="flex flex-col space-y-4">
+                  <FiltersPanel
+                    filters={filters}
+                    setFilters={setFilters}
+                    data={graph}
+                  />
+                  <Legend />
+                </div>
+              )}
+            </div>
           </div>
-          {"outputs" in graph.nodes[0] ? (
-            <ScheduleGraph
-              data={graph as GraphData<ScheduleNode>}
-              filters={filters}
-            />
-          ) : "vin" in graph.nodes[0] ? (
-            <UOpGraph data={graph as GraphData<UOpNode>} />
-          ) : (
-            <FuzzGraph data={graph as GraphData<FuzzNode>} />
-          )}
+          <ScheduleGraph
+            data={graph as GraphData<ScheduleNode>}
+            filters={filters}
+          />
         </>
       )}
     </div>

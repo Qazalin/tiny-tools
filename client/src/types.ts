@@ -7,18 +7,12 @@ export type ScheduleNode = GraphNode & {
   shape: string;
   full_shape: string;
   metadata: string;
+  category: string;
   forced_realize: boolean;
   ast?: string;
   ref?: string;
 };
-export type FuzzNode = GraphNode & { lb: string; code: string };
-export type UOpNode = GraphNode & {
-  uop: string;
-  dtype: string;
-  vin: string[];
-  arg: string;
-};
-export type GraphData<T = ScheduleNode | FuzzNode | UOpNode> = {
+export type GraphData<T = ScheduleNode> = {
   nodes: T[];
   edges: GraphEdge[];
 };

@@ -17,7 +17,7 @@ class Buffer:
 
 @functools.lru_cache(None)
 def cached_linearize(ast:LazyOp) -> Kernel:
-  lin= Kernel(ast, opts=Renderer())
+  lin = Kernel(ast, opts=OpenCLRenderer())
   lin.linearize()
   return lin
 
@@ -40,6 +40,7 @@ def transform_node(src):
     node["shape"] = str(src["ast"].src[0].arg.st.shape)
     node["full_shape"] = src["full_shape"]
     node["metadata"] = src["metadata"]
+    node["category"] = src["metadata"].split("-")[0].strip().replace("[", "").replace("]", "")
   else:
     node["fill"] = "white"
     node["code"], node["shape"] = "", ""
@@ -47,13 +48,14 @@ def transform_node(src):
     node["ast"] = ""
     node["full_shape"] = ""
     node["metadata"] = src["metadata"]
+    node["category"] = ""
   if int(node["ref"]) > 10:
     if node["ref"] in ref_fills: node["fill"] = ref_fills[node["ref"]]
     else: node["fill"] = ref_fills[node["ref"]] = "#" + hex(random.randrange(0, 2**24))[2:]
   #else: node["fill"] = "white"
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si[0])), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize, "full_shape": str(si[1].full_shape), "metadata": str(si[4]) })
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si[0])), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize, "full_shape": str(si[1].full_shape), "metadata": str(si[4]), })
 
 def load_schedule(data):
   nodes, edges = [], []

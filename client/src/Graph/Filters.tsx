@@ -7,6 +7,7 @@ export type Filters = Partial<{
   code: string;
   ast: string;
   ref: string;
+  category: string[];
 }>;
 export function useFilters({
   ref,
@@ -17,6 +18,7 @@ export function useFilters({
   filters: Filters | null;
   data: GraphData<ScheduleNode>;
 }): GraphData<ScheduleNode> {
+  console.log(filters);
   const [nodes, setNodes] = useState<ScheduleNode[]>(data.nodes);
   const [edges, setEdges] = useState<GraphData["edges"]>(data.edges);
   useEffect(() => {
@@ -30,6 +32,8 @@ export function useFilters({
     if (filters?.code) conds.push(node.code.includes(filters.code));
     if (filters?.ast) conds.push(node.ast?.includes(filters.ast));
     if (filters?.ref) conds.push(node.ref === filters.ref);
+    if (filters?.category && filters.category.length != 0)
+      conds.push(filters.category.includes(node.category));
     if (conds.length === 0) return;
     return conds.every((c) => c);
   }
