@@ -32,7 +32,7 @@ export function useFilters({
     if (filters?.code) conds.push(node.code.includes(filters.code));
     if (filters?.ast) conds.push(node.ast?.includes(filters.ast));
     if (filters?.ref) conds.push(node.ref === filters.ref);
-    if (filters?.category && filters.category.length != 0)
+    if (filters?.category && filters.category.length !== 0)
       conds.push(filters.category.includes(node.category));
     if (conds.length === 0) return;
     return conds.every((c) => c);

@@ -17,7 +17,7 @@ export default function FiltersPanel({
   useEffect(() => {
     const newCategories: { [k: string]: string[] } = {};
     data.nodes.forEach((n) => {
-      if (n.category == "") return;
+      if (n.category === "") return;
       if (!(n.category in newCategories)) {
         newCategories[n.category] = [];
       }
@@ -73,7 +73,7 @@ export default function FiltersPanel({
                     if (e.target.checked) {
                       if (!category.includes(c)) category.push(c);
                     } else {
-                      category = category.filter((rc) => rc != c);
+                      category = category.filter((rc) => rc !== c);
                     }
                     setFilters((prev) => ({ ...prev, category }));
                   }}

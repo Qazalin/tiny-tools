@@ -10,6 +10,6 @@ export function useFile(fp: string) {
       setFile(await res.text());
     };
     f();
-  }, []);
+  }, [fp]);
   return file;
 }
