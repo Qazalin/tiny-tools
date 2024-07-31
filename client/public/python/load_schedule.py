@@ -5,10 +5,9 @@ from tinygrad.codegen.kernel import Kernel
 from tinygrad.helpers import to_function_name
 from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.engine.graph import _tree
-from tinygrad.renderer import Renderer
 
 class Buffer:
-  def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0) -> None:
+  def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0, base=None, offset:int=0, preallocate=False) -> None:
     self.device, self.size, self.dtype, self._lb_refcount = device, size, dtype, lb_refcount
     if opaque is not None: self._buf = opaque
     if initial_value is not None: self._buf = initial_value
