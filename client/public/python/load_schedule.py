@@ -61,6 +61,7 @@ def load_schedule(data):
   for gi, (graph, prescheduled) in enumerate(data):
     buf_schedules = {out: si for si in prescheduled.values() for out in si[0]}
     for i, (key, ps) in enumerate(prescheduled.items()):
+      if str(ps[1].op) != "MetaOps.SINK": continue
       nodes.append(_parse(gi, i, ps))
       for x in graph[key]:
         if x not in buf_schedules: continue
