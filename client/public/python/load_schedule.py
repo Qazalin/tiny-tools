@@ -54,18 +54,18 @@ def transform_node(src):
   #else: node["fill"] = "white"
   return node
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si[1], 'inputs': list(map(str, si[2])), 'outputs': list(map(str, si[0])), "ref": str(si[0][0].buffer._lb_refcount), "forced_realize": si[0][0].forced_realize, "full_shape": str(si[1].full_shape), "metadata": str(si[4]), })
+def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": str(si.outputs[0].buffer._lb_refcount), "forced_realize": si.outputs[0].forced_realize, "full_shape": str(si.ast.full_shape), "metadata": str(si.metadata), })
 
 def load_schedule(data):
   nodes, edges = [], []
   for gi, (graph, prescheduled) in enumerate(data):
-    buf_schedules = {out: si for si in prescheduled.values() for out in si[0]}
+    buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
     for i, (key, ps) in enumerate(prescheduled.items()):
-      if str(ps[1].op) != "MetaOps.SINK": continue
+      if str(ps.ast.op) != "MetaOps.SINK": continue
       nodes.append(_parse(gi, i, ps))
       for x in graph[key]:
         if x not in buf_schedules: continue
-        child_idx = list(prescheduled).index(buf_schedules[x][0][0])
+        child_idx = list(prescheduled).index(buf_schedules[x].outputs[0])
         edge_id = f"{gi}-{i+1}-{child_idx}"
         edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
   return nodes, edges
