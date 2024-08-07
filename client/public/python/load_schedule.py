@@ -4,7 +4,6 @@ from tinygrad.ops import LazyOp, MetaOps
 from tinygrad.codegen.kernel import Kernel
 from tinygrad.helpers import to_function_name
 from tinygrad.renderer.cstyle import OpenCLRenderer
-from tinygrad.engine.graph import _tree
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0, base=None, offset:int=0, preallocate=False) -> None:
@@ -35,7 +34,7 @@ def transform_node(src):
       node["code"] = "idk"
       node["label"] = "lol"
       node["fill"] = "orange"
-    node["ast"] = "\n".join(["\n".join([f"{str(i).rjust(3)} {s}" for i,s in enumerate(_tree(op, {}, [-1]))]) for op in src["ast"].src])
+    node["ast"] = str(src["ast"])
     node["shape"] = str(src["ast"].src[0].arg.st.shape)
     node["full_shape"] = src["full_shape"]
     node["metadata"] = src["metadata"]
