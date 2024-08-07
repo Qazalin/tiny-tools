@@ -57,14 +57,14 @@ def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 
 
 def load_schedule(data):
   nodes, edges = [], []
-  for gi, (graph, prescheduled) in enumerate(data):
-    buf_schedules = {out:si for si in prescheduled.values() for out in si.outputs}
-    for i, (key, ps) in enumerate(prescheduled.items()):
-      #if ps.ast.op is not MetaOps.KERNEL: continue
-      nodes.append(_parse(gi, i, ps))
-      for x in graph[key]:
-        if x not in buf_schedules: continue
-        child_idx = list(prescheduled).index(buf_schedules[x].outputs[0])
+  for gi, (graph, in_degree) in enumerate(data):
+    prescheduled = list(in_degree)
+    for i, lsi in enumerate(prescheduled):
+      #if lsi.ast.op is not MetaOps.KERNEL: continue
+      nodes.append(_parse(gi, i, lsi))
+      for x in graph[lsi]:
+        if x not in prescheduled: continue
+        child_idx = prescheduled.index(x)
         edge_id = f"{gi}-{i+1}-{child_idx}"
         edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
   return nodes, edges
