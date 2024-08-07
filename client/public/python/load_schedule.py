@@ -22,7 +22,7 @@ def cached_linearize(ast:LazyOp) -> Kernel:
 ref_fills: Dict[int, str] = {}
 def transform_node(src):
   node = {**src}
-  if src["ast"].op is MetaOps.SINK:
+  if src["ast"].op is MetaOps.KERNEL:
     try:
       lin = cached_linearize(src["ast"])
       name = to_function_name(lin.name)
@@ -58,9 +58,9 @@ def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 
 def load_schedule(data):
   nodes, edges = [], []
   for gi, (graph, prescheduled) in enumerate(data):
-    buf_schedules = {out: si for si in prescheduled.values() for out in si.outputs}
+    buf_schedules = {out:si for si in prescheduled.values() for out in si.outputs}
     for i, (key, ps) in enumerate(prescheduled.items()):
-      if str(ps.ast.op) != "MetaOps.SINK": continue
+      #if ps.ast.op is not MetaOps.KERNEL: continue
       nodes.append(_parse(gi, i, ps))
       for x in graph[key]:
         if x not in buf_schedules: continue
