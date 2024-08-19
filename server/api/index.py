@@ -1,12 +1,14 @@
-import json, os, redis
+import json, os, redis, psycopg2, json
 from urllib.parse import urlparse, parse_qs
 from typing import cast
 from http.server import BaseHTTPRequestHandler
 
+SYSTEMS_MAP = {'Speed (AMD)': 'amd', 'Speed (AMD Training)': 'amd-train', 'Speed (NVIDIA)': 'nvidia', 'Speed (NVIDIA Training)': 'nvidia-train', 'Speed (Mac)': 'mac', 'Speed (comma)': 'comma'}
+SYSTEMS = list(SYSTEMS_MAP.values())
+
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
     self.send_response(200)
-    self.send_header('Content-type', 'application/octet-stream')
     self.send_header('Access-Control-Allow-Origin', '*')
     self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT')
     self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
@@ -16,11 +18,28 @@ class handler(BaseHTTPRequestHandler):
 
   def do_GET(self):
     self._set_headers()
+    if "stats" not in self.path:
+      self.send_header('Content-type', 'application/octet-stream')
+      query_params = parse_qs(urlparse(self.path).query)
+      query_id = query_params.get('id', [None])[0]
+      if query_id is None: return self.wfile.write(json.dumps({ "ok": True }, indent=None).encode('utf-8'))
+      r = redis.Redis(host=getenv("REDIS_HOST"), port=6379, password=getenv("REDIS_PASSWORD"), ssl=True)
+      return self.wfile.write(cast(bytes, r.get(query_id)))
+    self.send_header('Content-type', 'application/json')
+    db_url = urlparse(getenv("DB_URL"))
+    conn = psycopg2.connect(database=db_url.path[1:], user=db_url.username, password=db_url.password, host=db_url.hostname, port=db_url.port)
     query_params = parse_qs(urlparse(self.path).query)
-    query_id = query_params.get('id', [None])[0]
-    if query_id is None: return self.wfile.write(json.dumps({ "ok": True }, indent=None).encode('utf-8'))
-    r = redis.Redis(host=getenv("REDIS_HOST"), port=6379, password=getenv("REDIS_PASSWORD"), ssl=True)
-    return self.wfile.write(cast(bytes, r.get(query_id)))
+    filename = query_params["filename"][0]
+    with conn.cursor() as cursor:
+      cursor.execute("select * from benchmark where filename = %s limit 1;", (filename,))
+      row = cursor.fetchone()
+      assert row is not None
+      _, benchmarks, filename, system = row
+      ret = {"benchmarks": json.loads(benchmarks), "filename": filename, "system":system}
+      cursor.execute("select * from commits;")
+      commits = [x for _,x in cursor.fetchall()]
+    conn.close()
+    return self.wfile.write(json.dumps([ret, commits]).encode('utf-8'))
 
 def getenv(name: str):
   assert (val:=os.getenv(name))
