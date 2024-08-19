@@ -36,8 +36,10 @@ class handler(BaseHTTPRequestHandler):
       assert row is not None
       _, benchmarks, filename, system = row
       ret = {"benchmarks": json.loads(benchmarks), "filename": filename, "system":system}
-      cursor.execute("select * from commits;")
-      commits = [x for _,x in cursor.fetchall()]
+      if filename == "llama_unjitted.txt":
+        cursor.execute("select * from commits;")
+        commits = [x for _,x in cursor.fetchall()]
+      else: commits = []
     conn.close()
     return self.wfile.write(json.dumps([ret, commits]).encode('utf-8'))
 
