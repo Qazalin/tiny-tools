@@ -3,9 +3,6 @@ from urllib.parse import urlparse, parse_qs
 from typing import cast
 from http.server import BaseHTTPRequestHandler
 
-SYSTEMS_MAP = {'Speed (AMD)': 'amd', 'Speed (AMD Training)': 'amd-train', 'Speed (NVIDIA)': 'nvidia', 'Speed (NVIDIA Training)': 'nvidia-train', 'Speed (Mac)': 'mac', 'Speed (comma)': 'comma'}
-SYSTEMS = list(SYSTEMS_MAP.values())
-
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
     self.send_response(200)

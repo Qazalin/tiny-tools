@@ -36,7 +36,7 @@ def transform_node(src):
       node["label"] = "lol"
       node["fill"] = "orange"
     node["ast"] = str(src["ast"])
-    node["shape"] = str(src["ast"].src[0].arg.st.shape)
+    node["shape"] = str(src["ast"].src[0].st_arg.shape)
     node["full_shape"] = src["full_shape"]
     node["metadata"] = src["metadata"]
     node["category"] = src["metadata"].split("-")[0].strip().replace("[", "").replace("]", "")
