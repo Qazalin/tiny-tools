@@ -1,6 +1,6 @@
-import functools, re, pickle, importlib, io, json, random
+import re, pickle, importlib, io, json, random
 from typing import Dict
-from tinygrad.ops import LazyOp, MetaOps
+from tinygrad.ops import UOp, UOps
 from tinygrad.codegen.kernel import Kernel
 from tinygrad.helpers import to_function_name
 from tinygrad.renderer.cstyle import OpenCLRenderer
@@ -13,16 +13,17 @@ class Buffer:
   def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
   def ref(self): return
 
-@functools.lru_cache(None)
-def cached_linearize(ast:LazyOp) -> Kernel:
+method_cache: Dict[bytes, Kernel] = {}
+def cached_linearize(ast:UOp) -> Kernel:
+  if ast.key in method_cache: return method_cache[ast.key]
   lin = Kernel(ast, opts=OpenCLRenderer())
   lin.linearize()
-  return lin
+  return method_cache.setdefault(ast.key, lin)
 
 ref_fills: Dict[int, str] = {}
 def transform_node(src):
   node = {**src}
-  if src["ast"].op is MetaOps.KERNEL:
+  if src["ast"].op is UOps.SINK:
     try:
       lin = cached_linearize(src["ast"])
       name = to_function_name(lin.name)
