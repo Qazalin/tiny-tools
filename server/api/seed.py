@@ -23,7 +23,12 @@ def get_runs(branch:str, per_page:int):
       with io.BytesIO(res.content) as zip_content:
         with zipfile.ZipFile(zip_content, "r") as zip_ref: zip_ref.extractall(f"/tmp/benchmarks/{run['run_number']}_{run['head_sha']}/{SYSTEMS_MAP[artifact['name']]}")
 
-if not os.getenv("CACHE_MASTER"): get_runs("master", 10)
+if int(os.getenv("CACHE_MASTER", "1")) == 0 or not os.path.isdir("/tmp/benchmarks"):
+  if os.path.isdir("/tmp/benchmarks"): os.system("rm -rd /tmp/benchmarks")
+  get_runs("master", 10)
+else:
+  dirs = [d for d in os.listdir("/tmp/benchmarks")]
+  assert len(dirs) == 10, f"delete the update_benchmark run {len(dirs)}"
 get_runs("update_benchmark", 1)
 files = list(sorted(list(glob.glob(f"/tmp/benchmarks/*")), key=lambda f:int(f.split("/")[-1].split("_")[0])))
 commits = [f.split("/")[-1] for f in files]
