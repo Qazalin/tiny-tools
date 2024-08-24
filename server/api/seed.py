@@ -28,8 +28,10 @@ if int(os.getenv("CACHE_MASTER", "1")) == 0 or not os.path.isdir("/tmp/benchmark
   get_runs("master", 10)
 else:
   dirs = [d for d in os.listdir("/tmp/benchmarks")]
-  assert len(dirs) == 10, f"delete the update_benchmark run {len(dirs)}"
-get_runs("update_benchmark", 1)
+  ret = input(f"refresh the update_benchmark run {dirs[-1]}? (Y/n) ")
+  if ret != "n":
+    os.system(f"rm -rd /tmp/benchmarks/{dirs[-1]}")
+    get_runs("update_benchmark", 1)
 files = list(sorted(list(glob.glob(f"/tmp/benchmarks/*")), key=lambda f:int(f.split("/")[-1].split("_")[0])))
 commits = [f.split("/")[-1] for f in files]
 ret = []
