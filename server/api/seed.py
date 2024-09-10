@@ -1,6 +1,6 @@
-from urllib.parse import urlparse
-import os, requests, zipfile, io, glob, json, psycopg2
+import os, requests, zipfile, io, glob, json
 from benchmark import TRACKED_BENCHMARKS, regex_extract_benchmark
+from tinygrad.helpers import db_connection
 
 # *** github settings
 BASE_URL = f"https://api.github.com/repos/{os.getenv('GITHUB_REPOSITORY', 'tinygrad/tinygrad')}"
@@ -49,15 +49,14 @@ for file in TRACKED_BENCHMARKS:
   ret.append({"benchmarks": benchmarks, "filename": file, "system":"_".join(sorted(systems, key=lambda x:SYSTEMS.index(x)))})
 
 commits_ret = [{"sha": x.split("_")[1]} for x in commits]
-db_url = urlparse(os.environ["DB_URL"])
-conn = psycopg2.connect(database=db_url.path[1:], user=db_url.username, password=db_url.password, host=db_url.hostname, port=db_url.port)
+conn = db_connection()
 print(f"*** uploading {len(commits_ret)} commits")
-with conn.cursor() as cursor:
-  cursor.execute("""DROP TABLE IF EXISTS benchmark""")
-  cursor.execute("""DROP TABLE IF EXISTS commits""")
-  cursor.execute("""CREATE TABLE benchmark ( id SERIAL PRIMARY KEY, benchmarks TEXT, filename TEXT, system TEXT)""")
-  cursor.execute("""CREATE TABLE commits (id SERIAL PRIMARY KEY, sha TEXT)""")
-  for item in ret: cursor.execute("INSERT INTO benchmark (benchmarks, filename, system) VALUES (%s, %s, %s)", (json.dumps(item["benchmarks"]), item["filename"], item["system"]))
-  for commit in commits_ret: cursor.execute("INSERT INTO commits (sha) VALUES (%s)", (commit["sha"],))
+cursor = conn.cursor()
+cursor.execute("""DROP TABLE IF EXISTS benchmark""")
+cursor.execute("""DROP TABLE IF EXISTS commits""")
+cursor.execute("""CREATE TABLE benchmark ( id SERIAL PRIMARY KEY, benchmarks TEXT, filename TEXT, system TEXT)""")
+cursor.execute("""CREATE TABLE commits (id SERIAL PRIMARY KEY, sha TEXT)""")
+for item in ret: cursor.execute("INSERT INTO benchmark (benchmarks, filename, system) VALUES (?, ?, ?)", (json.dumps(item["benchmarks"]), item["filename"], item["system"]))
+for commit in commits_ret: cursor.execute("INSERT INTO commits (sha) VALUES (?)", (commit["sha"],))
 conn.commit()
 conn.close()
