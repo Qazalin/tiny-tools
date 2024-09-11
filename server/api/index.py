@@ -1,7 +1,8 @@
-import json, os, redis, psycopg2, json
+import json, os, redis, json
 from urllib.parse import urlparse, parse_qs
 from typing import cast
 from http.server import BaseHTTPRequestHandler
+from tinygrad.helpers import db_connection
 
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
@@ -23,21 +24,19 @@ class handler(BaseHTTPRequestHandler):
       r = redis.Redis(host=getenv("REDIS_HOST"), port=6379, password=getenv("REDIS_PASSWORD"), ssl=True)
       return self.wfile.write(cast(bytes, r.get(query_id)))
     self.send_header('Content-type', 'application/json')
-    db_url = urlparse(getenv("DB_URL"))
-    conn = psycopg2.connect(database=db_url.path[1:], user=db_url.username, password=db_url.password, host=db_url.hostname, port=db_url.port)
+    conn = db_connection()
     query_params = parse_qs(urlparse(self.path).query)
     filename = query_params["filename"][0]
-    with conn.cursor() as cursor:
-      cursor.execute("select * from benchmark where filename = %s limit 1;", (filename,))
-      row = cursor.fetchone()
-      assert row is not None
-      _, benchmarks, filename, system = row
-      ret = {"benchmarks": json.loads(benchmarks), "filename": filename, "system":system}
-      if filename == "llama_unjitted.txt":
-        cursor.execute("select * from commits;")
-        commits = [x for _,x in cursor.fetchall()]
-      else: commits = []
-    conn.close()
+    cursor = conn.cursor()
+    cursor.execute("select * from benchmark where filename = ? limit 1;", (filename,))
+    row = cursor.fetchone()
+    assert row is not None
+    _, benchmarks, filename, system = row
+    ret = {"benchmarks": json.loads(benchmarks), "filename": filename, "system":system}
+    if filename == "llama_unjitted.txt":
+      cursor.execute("select * from commits;")
+      commits = [x for _,x in cursor.fetchall()]
+    else: commits = []
     return self.wfile.write(json.dumps([ret, commits]).encode('utf-8'))
 
 def getenv(name: str):
