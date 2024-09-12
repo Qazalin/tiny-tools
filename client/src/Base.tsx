@@ -8,7 +8,8 @@ import ScheduleGraph, {
   Legend,
   FiltersBox,
 } from "./schedule-graph";
-import { GraphData, ScheduleNode } from "./types";
+import UOpGraph from "./rewrite-graph";
+import { GraphData, ScheduleNode, UOpNode } from "./types";
 import { API_URL } from "./utils";
 
 export default function Base() {
@@ -45,6 +46,17 @@ export default function Base() {
   // start page
   if (graph == null) {
     return <GraphLoader setGraph={updateGraph} showTip />;
+  }
+
+  if (graph.nodes.length > 0 && "op" in graph.nodes[0]) {
+    return (
+      <>
+        <div className="absolute top-5 left-5 z-10 flex flex-col space-y-4">
+          <GraphLoader setGraph={updateGraph} />
+        </div>
+        <UOpGraph data={graph as any as GraphData<UOpNode>} />
+      </>
+    );
   }
 
   // main tool w filters

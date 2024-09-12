@@ -12,7 +12,7 @@ export default function GraphLoader({
 }) {
   const [pickleData, setPickleData] = useState<ArrayBuffer>();
   const [isLoading, setIsLoading] = useState(false);
-  const prg = useFile("/python/load_schedule.py");
+  const prg = useFile("/python/load_uops.py");
 
   async function r(data: ArrayBuffer) {
     setIsLoading(true);
@@ -27,10 +27,10 @@ export default function GraphLoader({
     const micropip = py.pyimport("micropip");
     await micropip.install("tinygrad-tools");
 
-    py.FS.writeFile("/sched.pkl", new Uint8Array(data), { encoding: "binary" });
+    py.FS.writeFile("/uop.pkl", new Uint8Array(data), { encoding: "binary" });
     py.runPython(prg);
     const graph: GraphData = JSON.parse(
-      py.FS.readFile("/sched.json", { encoding: "utf8" }),
+      py.FS.readFile("/uop.json", { encoding: "utf8" }),
     );
 
     setIsLoading(false);

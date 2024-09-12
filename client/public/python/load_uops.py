@@ -2,7 +2,7 @@ import pickle, os, json
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Tuple
 
-from tinygrad.ops import UOp
+from tinygrad.ops import UOp, UOps
 from tinygrad.engine.graph import uops_colors
 
 # *** GraphNode return type
@@ -23,8 +23,12 @@ class UOpNode(GraphNode):
   src: str
   arg: str
 
+def get_label(uop:UOp) -> str:
+  if uop.op in {UOps.CONST, UOps.ALU}: return f"{uop.op} {uop.arg}"
+  return str(uop.op)
+
 def to_uop_node(id:str, uop:UOp) -> UOpNode:
-  return UOpNode(id, uops_colors.get(uop.op, "white"), str(uop.op), str(uop.op), str(uop.dtype), str(uop), str(uop.arg))
+  return UOpNode(id, uops_colors.get(uop.op, "white"), get_label(uop), str(uop.op), str(uop.dtype), str(uop), str(uop.arg))
 
 def load_uops(data:List[Tuple[UOp, UOp]]):
   nodes: List[UOpNode] = []

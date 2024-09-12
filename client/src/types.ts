@@ -13,6 +13,13 @@ export type ScheduleNode = GraphNode & {
   ref?: string;
 };
 
+export type UOpNode = GraphNode & {
+  op: string;
+  dtype: string;
+  src: string;
+  arg: string;
+};
+
 export type GraphData<T = ScheduleNode> = {
   nodes: T[];
   edges: GraphEdge[];
