@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 redis = "*"
-psycopg2-binary = "*"
+requests = "*"
 
 [requires]
 python_version = "3.9"

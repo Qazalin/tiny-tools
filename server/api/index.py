@@ -1,8 +1,9 @@
-import json, os, redis, json
+import json, os, redis, requests
 from urllib.parse import urlparse, parse_qs
 from typing import cast
 from http.server import BaseHTTPRequestHandler
-from tinygrad.helpers import db_connection
+
+GH_HEADERS = {"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):
@@ -20,9 +21,11 @@ class handler(BaseHTTPRequestHandler):
       self.send_header('Content-type', 'application/octet-stream')
       query_params = parse_qs(urlparse(self.path).query)
       query_id = query_params.get('id', [None])[0]
-      if query_id is None: return self.wfile.write(json.dumps({ "ok": True }, indent=None).encode('utf-8'))
+      if query_id is None:
+        return self.wfile.write(json.dumps({ "ok": True }, indent=None).encode('utf-8'))
       r = redis.Redis(host=getenv("REDIS_HOST"), port=6379, password=getenv("REDIS_PASSWORD"), ssl=True)
       return self.wfile.write(cast(bytes, r.get(query_id)))
+    from tinygrad.helpers import db_connection
     self.send_header('Content-type', 'application/json')
     conn = db_connection()
     query_params = parse_qs(urlparse(self.path).query)
@@ -38,6 +41,17 @@ class handler(BaseHTTPRequestHandler):
       commits = [x for _,x in cursor.fetchall()]
     else: commits = []
     return self.wfile.write(json.dumps([ret, commits]).encode('utf-8'))
+
+  def do_POST(self):
+    post_data = self.rfile.read(int(self.headers["Content-Length"]))
+    payload = json.loads(post_data)
+    print(payload["after"])
+    res = requests.post("https://api.github.com/repos/qazalin/tinyfork/actions/workflows/publish_tool.yml/dispatches", headers=GH_HEADERS, data=json.dumps({"ref": "master"}))
+    print(res.status_code)
+    self.send_response(200)
+    self.send_header("Content-Type", "application/json")
+    self.end_headers()
+    self.wfile.write(json.dumps({"status": "success", "message": "wh received"}).encode())
 
 def getenv(name: str):
   assert (val:=os.getenv(name))
