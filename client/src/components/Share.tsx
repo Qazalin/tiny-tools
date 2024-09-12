@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { GraphData } from "./types";
-import { API_URL } from "./utils";
+import { GraphData } from "../types";
+import { API_URL } from "../utils";
 
 export default function Share({ graph }: { graph: GraphData | null }) {
-  const { mutate, isPending, data } = useMutation({
+  const { mutate } = useMutation({
     mutationKey: ["share"],
     mutationFn: async () => {
       if (graph == null) return;

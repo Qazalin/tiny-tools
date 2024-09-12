@@ -1,6 +1,6 @@
 import { XMarkIcon, ClipboardIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef } from "react";
-import CodeBlock from "../CodeBlock";
+import CodeBlock from "../components/CodeBlock";
 import { ScheduleNode } from "../types";
 
 type KernelProps = { si: ScheduleNode | null; onClose: () => void };
@@ -57,11 +57,7 @@ export default function Kernel({ si, onClose }: KernelProps) {
               <p className="text-neutral-500"># outputs</p>
               {si.outputs.map((out, i) => (
                 <p key={`out-${i}` + out}>
-
-                    <span className="text-neutral-500">
-                      {i}
-                    </span>{" "}
-                 {out}
+                  <span className="text-neutral-500">{i}</span> {out}
                 </p>
               ))}
             </div>

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import FileUploader from "./FileUpload";
-import { GraphData } from "./types";
-import { useFile } from "./utils";
+import FileUploader from "../components/FileUpload";
+import { GraphData } from "../types";
+import { useFile } from "../utils";
 
-export default function TinygradParser({
+export default function GraphLoader({
   setGraph,
   showTip = false,
 }: {

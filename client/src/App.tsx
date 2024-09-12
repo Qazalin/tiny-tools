@@ -16,7 +16,9 @@ const queryClient = new QueryClient({
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Base />
+      <div className="flex items-center justify-center min-w-[100vw] min-h-screen">
+        <Base />
+      </div>
     </QueryClientProvider>
   );
 }

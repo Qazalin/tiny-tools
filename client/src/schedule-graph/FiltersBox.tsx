@@ -1,12 +1,12 @@
 import { Dispatch, SetStateAction, useState, useEffect } from "react";
-import { Filters } from "./Graph/Filters";
-import { GraphData, ScheduleNode } from "./types";
+import { Filters } from ".";
+import { GraphData, ScheduleNode } from "../types";
 
 type BaseProps = {
   filters: Filters | null;
   setFilters: Dispatch<SetStateAction<Filters | null>>;
 };
-export default function FiltersPanel({
+export function FiltersBox({
   data,
   filters,
   setFilters,

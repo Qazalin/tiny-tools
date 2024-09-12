@@ -1,10 +1,13 @@
-import {  useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { GraphCanvas, GraphCanvasRef, useSelection } from "reagraph";
 import KernelModal from "./Kernel";
 import { GraphData, ScheduleNode } from "../types";
 import { graphTheme } from "./theme";
 import { Filters, useFilters } from "./Filters";
 
+export type { Filters } from "./Filters";
+export { Legend } from "./Legend";
+export { FiltersBox } from "./FiltersBox";
 export default function Graph({
   data,
   filters,

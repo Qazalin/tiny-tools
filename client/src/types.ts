@@ -12,6 +12,7 @@ export type ScheduleNode = GraphNode & {
   ast?: string;
   ref?: string;
 };
+
 export type GraphData<T = ScheduleNode> = {
   nodes: T[];
   edges: GraphEdge[];

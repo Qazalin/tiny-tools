@@ -1,4 +1,4 @@
-export default function Legend() {
+export function Legend() {
   return (
     <div className="rounded-md p-2 space-y-3 flex flex-col w-fit">
       {[
