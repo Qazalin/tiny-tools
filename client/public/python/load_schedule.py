@@ -1,27 +1,16 @@
 import re, pickle, importlib, io, json, os
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional
+from typing import DefaultDict, Dict, List, Optional, Tuple
 from tinygrad.ops import MetaOps, UOp, UOps
 from tinygrad.codegen.kernel import Kernel
 from tinygrad.renderer import Program
 from tinygrad.renderer.cstyle import OpenCLRenderer
 from tinygrad.engine.schedule import LBScheduleItem
 
+# *** GraphNode return type
+
 INPUT_FP = os.getenv("INPUT_FP", "/sched.pkl")
 OUTPUT_FP = os.getenv("OUTPUT_FP", "/sched.json")
-
-class Buffer:
-  def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0, base=None, offset:int=0, preallocate=False) -> None:
-    self.device, self.size, self.dtype, self._lb_refcount = device, size, dtype, lb_refcount
-    if opaque is not None: self._buf = opaque
-    if initial_value is not None: self._buf = initial_value
-  def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
-  def ref(self, _): return
-
-method_cache: Dict[bytes, Program] = {}
-def cached_linearize(ast:UOp) -> Program:
-  if ast.key in method_cache: return method_cache[ast.key]
-  return method_cache.setdefault(ast.key, Kernel(ast, opts=OpenCLRenderer()).to_program())
 
 @dataclass(frozen=True)
 class GraphNode:
@@ -42,6 +31,8 @@ class ScheduleNode(GraphNode):
   ast: Optional[str] = None
   ref: Optional[str] = None
 
+# *** transform LBScheduleItem to GraphNode
+
 def color_graph(name:str) -> str:
   # multi output
   if bool(re.search(r'r\d', name)) or bool(re.search(r'E\d', name)): return "green"
@@ -49,6 +40,11 @@ def color_graph(name:str) -> str:
   if name.startswith("r"): return "red"
   # E_
   return "blue"
+
+method_cache: Dict[bytes, Program] = {}
+def cached_linearize(ast:UOp) -> Program:
+  if ast.key in method_cache: return method_cache[ast.key]
+  return method_cache.setdefault(ast.key, Kernel(ast, opts=OpenCLRenderer()).to_program())
 
 def to_schedule_node(id:str, lsi:LBScheduleItem) -> ScheduleNode:
   if lsi.ast.op is not UOps.SINK: return ScheduleNode(id, fill="white", label=str(lsi.ast.op))
@@ -64,9 +60,9 @@ def to_schedule_node(id:str, lsi:LBScheduleItem) -> ScheduleNode:
       metadata=str(list(map(str, lsi.metadata))), category=str(lsi.metadata[0]),
       forced_realize=any(x.forced_realize for x in lsi.outputs), ast=str(lsi.ast), ref=str(lsi.outputs[0].buffer._lb_refcount))
 
-def load_schedule(data):
+def load_schedule(data:List[Tuple[DefaultDict[LBScheduleItem, List[LBScheduleItem]], DefaultDict[LBScheduleItem, int]]]) -> Tuple[List[ScheduleNode], List[Dict[str, str]]]:
   nodes: List[ScheduleNode] = []
-  edges: List[Dict] = []
+  edges: List[Dict[str, str]] = []
   for gi, (graph, in_degree) in enumerate(data):
     schedule_items = list(in_degree)
     for i, lsi in enumerate(schedule_items):
@@ -78,8 +74,17 @@ def load_schedule(data):
         edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
   return nodes, edges
 
+# *** unpickler to deal with browser limitations
+
+class Buffer:
+  def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0, base=None, offset:int=0, preallocate=False) -> None:
+    self.device, self.size, self.dtype, self._lb_refcount = device, size, dtype, lb_refcount
+    if opaque is not None: self._buf = opaque
+    if initial_value is not None: self._buf = initial_value
+  def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
+  def ref(self, _): return
 class TinyUnpickler(pickle.Unpickler):
-  def find_class(self, module: str, name: str):
+  def find_class(self, module:str, name:str):
     if module == "tinygrad.device" and name == "Buffer": return Buffer
     return getattr(importlib.import_module(module), name)
 
