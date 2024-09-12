@@ -1,9 +1,14 @@
-import re, pickle, importlib, io, json, random
-from typing import Dict
-from tinygrad.ops import UOp, UOps
+import re, pickle, importlib, io, json, os
+from dataclasses import dataclass, field, asdict
+from typing import Dict, List, Optional
+from tinygrad.ops import MetaOps, UOp, UOps
 from tinygrad.codegen.kernel import Kernel
-from tinygrad.helpers import to_function_name
+from tinygrad.renderer import Program
 from tinygrad.renderer.cstyle import OpenCLRenderer
+from tinygrad.engine.schedule import LBScheduleItem
+
+INPUT_FP = os.getenv("INPUT_FP", "/sched.pkl")
+OUTPUT_FP = os.getenv("OUTPUT_FP", "/sched.json")
 
 class Buffer:
   def __init__(self, device:str, size:int, dtype, opaque=None, options=None, initial_value=None, lb_refcount=0, base=None, offset:int=0, preallocate=False) -> None:
@@ -11,61 +16,64 @@ class Buffer:
     if opaque is not None: self._buf = opaque
     if initial_value is not None: self._buf = initial_value
   def __repr__(self): return f"<buf real:{hasattr(self, '_buf')} device:{self.device} size:{self.size} dtype:{self.dtype}>"
-  def ref(self): return
+  def ref(self, _): return
 
-method_cache: Dict[bytes, Kernel] = {}
-def cached_linearize(ast:UOp) -> Kernel:
+method_cache: Dict[bytes, Program] = {}
+def cached_linearize(ast:UOp) -> Program:
   if ast.key in method_cache: return method_cache[ast.key]
-  lin = Kernel(ast, opts=OpenCLRenderer())
-  lin.linearize()
-  return method_cache.setdefault(ast.key, lin)
+  return method_cache.setdefault(ast.key, Kernel(ast, opts=OpenCLRenderer()).to_program())
 
-ref_fills: Dict[int, str] = {}
-def transform_node(src):
-  node = {**src}
-  if src["ast"].op is UOps.SINK:
-    try:
-      lin = cached_linearize(src["ast"])
-      name = to_function_name(lin.name)
-      node["fill"] = "green" if bool(re.search(r'r\d', name)) else "red" if name.startswith("r") else "green" if bool(re.search(r'E\d', name)) else "yellow" if "ASSIGN" in str(src["outputs"]) else "blue"
-      node["code"] = OpenCLRenderer().render(name, lin.uops)
-      node["label"] = name
-    except Exception as e:
-      print("FAILED TO LINEARIZE", e, src["ast"])
-      node["code"] = "idk"
-      node["label"] = "lol"
-      node["fill"] = "orange"
-    node["ast"] = str(src["ast"])
-    node["shape"] = str(src["ast"].src[0].st_arg.shape)
-    node["full_shape"] = src["full_shape"]
-    node["metadata"] = src["metadata"]
-    node["category"] = src["metadata"].split("-")[0].strip().replace("[", "").replace("]", "")
-  else:
-    node["fill"] = "white"
-    node["code"], node["shape"] = "", ""
-    node["label"] = str(src["ast"].op)
-    node["ast"] = ""
-    node["full_shape"] = ""
-    node["metadata"] = src["metadata"]
-    node["category"] = ""
-  if int(node["ref"]) > 10:
-    if node["ref"] in ref_fills: node["fill"] = ref_fills[node["ref"]]
-    else: node["fill"] = ref_fills[node["ref"]] = "#" + hex(random.randrange(0, 2**24))[2:]
-  #else: node["fill"] = "white"
-  return node
+@dataclass(frozen=True)
+class GraphNode:
+  id: str
+  fill: str
+  label: str
 
-def _parse(gi: int, i:int, si): return transform_node({ 'id': f"{gi}-{str(i)}", 'ast': si.ast, 'inputs': list(map(str, si.inputs)), 'outputs': list(map(str, si.outputs)), "ref": str(si.outputs[0].buffer._lb_refcount), "forced_realize": si.outputs[0].forced_realize, "full_shape": str(si.ast.full_shape), "metadata": str(si.metadata), })
+@dataclass(frozen=True)
+class ScheduleNode(GraphNode):
+  code: str = ""
+  inputs: List[str] = field(default_factory=list)
+  outputs: List[str] = field(default_factory=list)
+  shape: str = ""
+  full_shape: str = ""
+  metadata: str = ""
+  category: str = ""
+  forced_realize: bool = False
+  ast: Optional[str] = None
+  ref: Optional[str] = None
+
+def color_graph(name:str) -> str:
+  # multi output
+  if bool(re.search(r'r\d', name)) or bool(re.search(r'E\d', name)): return "green"
+  # r_
+  if name.startswith("r"): return "red"
+  # E_
+  return "blue"
+
+def to_schedule_node(id:str, lsi:LBScheduleItem) -> ScheduleNode:
+  if lsi.ast.op is not UOps.SINK: return ScheduleNode(id, fill="white", label=str(lsi.ast.op))
+  try: prg = cached_linearize(lsi.ast)
+  except Exception as e:
+    print(f"FAILED TO LINEARIZE {lsi.ast} {e}")
+    return ScheduleNode(id, fill="orange", label="INVALID")
+  return ScheduleNode(id,
+      fill="yellow" if any(x.op is MetaOps.ASSIGN for x in lsi.outputs) else color_graph(prg.function_name),
+      label=prg.function_name, code=prg.src,
+      inputs=list(map(str, lsi.inputs)), outputs=list(map(str, lsi.outputs)),
+      shape=str(lsi.outputs[0].shape), full_shape=str(lsi.ast.full_shape),
+      metadata=str(list(map(str, lsi.metadata))), category=str(lsi.metadata[0]),
+      forced_realize=any(x.forced_realize for x in lsi.outputs), ast=str(lsi.ast), ref=str(lsi.outputs[0].buffer._lb_refcount))
 
 def load_schedule(data):
-  nodes, edges = [], []
+  nodes: List[ScheduleNode] = []
+  edges: List[Dict] = []
   for gi, (graph, in_degree) in enumerate(data):
-    prescheduled = list(in_degree)
-    for i, lsi in enumerate(prescheduled):
-      #if lsi.ast.op is not MetaOps.KERNEL: continue
-      nodes.append(_parse(gi, i, lsi))
+    schedule_items = list(in_degree)
+    for i, lsi in enumerate(schedule_items):
+      nodes.append(to_schedule_node(f"{gi}-{i}", lsi))
       for x in graph[lsi]:
-        if x not in prescheduled: continue
-        child_idx = prescheduled.index(x)
+        if x not in schedule_items: continue
+        child_idx = schedule_items.index(x)
         edge_id = f"{gi}-{i+1}-{child_idx}"
         edges.append({'source': f"{gi}-{i}", 'target': f"{gi}-{child_idx}", 'id': edge_id, 'label': edge_id})
   return nodes, edges
@@ -76,7 +84,7 @@ class TinyUnpickler(pickle.Unpickler):
     return getattr(importlib.import_module(module), name)
 
 if __name__ == "__main__":
-  with open("/sched.pkl", "rb") as f: s = f.read()
+  with open(INPUT_FP, "rb") as f: s = f.read()
   data = TinyUnpickler(io.BytesIO(s)).load()
   nodes, edges = load_schedule(data)
-  with open("/sched.json", "w") as fh: fh.write(json.dumps({"nodes": nodes, "edges": edges }))
+  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps({"nodes": list(map(asdict, nodes)), "edges": edges }))
