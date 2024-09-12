@@ -46,7 +46,7 @@ class handler(BaseHTTPRequestHandler):
     post_data = self.rfile.read(int(self.headers["Content-Length"]))
     payload = json.loads(post_data)
     print(payload["after"])
-    res = requests.post("https://api.github.com/repos/qazalin/tinygrad/actions/workflows/publish_tool.yml/dispatches", headers=GH_HEADERS, data=json.dumps({"ref": "master"}))
+    res = requests.post("https://api.github.com/repos/qazalin/tinygrad/actions/workflows/publish_tinytools.yml/dispatches", headers=GH_HEADERS, data=json.dumps({"ref": "master"}))
     print(res.status_code)
     self.send_response(200)
     self.send_header("Content-Type", "application/json")
