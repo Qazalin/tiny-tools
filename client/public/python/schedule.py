@@ -1,5 +1,5 @@
-import re, pickle, importlib, io, json, os
-from dataclasses import dataclass, field, asdict
+import re, pickle, importlib, os
+from dataclasses import dataclass, field
 from typing import DefaultDict, Dict, List, Optional, Tuple
 from tinygrad.ops import MetaOps, UOp, UOps
 from tinygrad.codegen.kernel import Kernel
@@ -87,9 +87,3 @@ class TinyUnpickler(pickle.Unpickler):
   def find_class(self, module:str, name:str):
     if module == "tinygrad.device" and name == "Buffer": return Buffer
     return getattr(importlib.import_module(module), name)
-
-if __name__ == "__main__":
-  with open(INPUT_FP, "rb") as f: s = f.read()
-  data = TinyUnpickler(io.BytesIO(s)).load()
-  nodes, edges = load_schedule(data)
-  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps({"nodes": list(map(asdict, nodes)), "edges": edges }))

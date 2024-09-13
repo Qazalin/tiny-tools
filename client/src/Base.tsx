@@ -12,6 +12,7 @@ import UOpGraph from "./rewrite-graph";
 import { GraphData, ScheduleNode, UOpNode } from "./types";
 import { API_URL } from "./utils";
 import PageSelector from "./components/PageSelector";
+import TestLoader from "./tinygrad/Test";
 
 export default function Base() {
   const [page, setPage] = useState(0);
@@ -45,9 +46,12 @@ export default function Base() {
     return <Spinner className="w-8 h-8" />;
   }
 
-  return <PageSelector page={page} setPage={setPage} total={10} />;
+  return <TestLoader />;
 
   /*
+
+  // return <PageSelector page={page} setPage={setPage} total={10} />;
+
   // start page
   if (graph == null) {
     return <GraphLoader setGraph={updateGraph} showTip />;

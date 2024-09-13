@@ -1,4 +1,4 @@
-import pickle, os, json
+import os
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Tuple
 
@@ -7,8 +7,8 @@ from tinygrad.engine.graph import uops_colors
 
 # *** GraphNode return type
 
-INPUT_FP = os.getenv("INPUT_FP", "/uop.pkl")
-OUTPUT_FP = os.getenv("OUTPUT_FP", "/uop.json")
+INPUT_FP = os.getenv("INPUT_FP", "/sched.pkl")
+OUTPUT_FP = os.getenv("OUTPUT_FP", "/sched.json")
 
 @dataclass(frozen=True)
 class GraphNode:
@@ -45,11 +45,3 @@ def load_uops(data:Dict[int, List[Tuple[UOp, UOp]]]) -> List[Dict]:
           edges.append({"source": f"{sink_id}-{input_idx}", "target": f"{sink_id}-{uid}", "id": edge_id, "label": edge_id})
     ret.append({"nodes": list(map(asdict, nodes)), "edges": edges })
   return ret
-
-# *** unpickler
-
-if __name__ == "__main__":
-  with open(INPUT_FP, "rb") as f: s = f.read()
-  with open(INPUT_FP, "rb") as f: data: Dict[int, List[Tuple[UOp, UOp]]] = pickle.load(f)
-  ret = load_uops(data)
-  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps(ret)[0])
