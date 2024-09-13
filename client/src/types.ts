@@ -24,3 +24,7 @@ export type GraphData<T = ScheduleNode> = {
   nodes: T[];
   edges: GraphEdge[];
 };
+
+export type GraphBatch<T> = T & {
+  graphs: GraphData[];
+};

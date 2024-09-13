@@ -8,6 +8,7 @@
     "@types/node": "^16.18.93",
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.23",
+    "classnames": "^2.5.1",
     "pako": "^2.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

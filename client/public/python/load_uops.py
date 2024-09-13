@@ -30,23 +30,26 @@ def get_label(uop:UOp) -> str:
 def to_uop_node(id:str, uop:UOp) -> UOpNode:
   return UOpNode(id, uops_colors.get(uop.op, "white"), get_label(uop), str(uop.op), str(uop.dtype), str(uop), str(uop.arg))
 
-def load_uops(data:List[Tuple[UOp, UOp]]):
-  nodes: List[UOpNode] = []
-  edges: List[Dict[str, str]] = []
-  for sink_id, (prev, _rw) in enumerate(data):
-    uops = list(prev.sparents)
-    for uid, x in enumerate(uops):
-      nodes.append(to_uop_node(f"{sink_id}-{uid}", x))
-      for y in x.src:
-        input_idx = uops.index(y)
-        edge_id = f"{sink_id}-{input_idx}-{uid}"
-        edges.append({"source": f"{sink_id}-{input_idx}", "target": f"{sink_id}-{uid}", "id": edge_id, "label": edge_id})
-  return nodes, edges
+def load_uops(data:Dict[int, List[Tuple[UOp, UOp]]]) -> List[Dict]:
+  ret = []
+  for _, rewrites in data.items():
+    nodes: List[UOpNode] = []
+    edges: List[Dict[str, str]] = []
+    for sink_id, (prev, _rw) in enumerate(rewrites):
+      uops = list(prev.sparents)
+      for uid, x in enumerate(uops):
+        nodes.append(to_uop_node(f"{sink_id}-{uid}", x))
+        for y in x.src:
+          input_idx = uops.index(y)
+          edge_id = f"{sink_id}-{input_idx}-{uid}"
+          edges.append({"source": f"{sink_id}-{input_idx}", "target": f"{sink_id}-{uid}", "id": edge_id, "label": edge_id})
+    ret.append({"nodes": list(map(asdict, nodes)), "edges": edges })
+  return ret
 
 # *** unpickler
 
 if __name__ == "__main__":
   with open(INPUT_FP, "rb") as f: s = f.read()
-  with open(INPUT_FP, "rb") as f: data: List[Tuple[UOp, UOp]] = pickle.load(f)
-  nodes, edges = load_uops(data)
-  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps({"nodes": list(map(asdict, nodes)), "edges": edges }))
+  with open(INPUT_FP, "rb") as f: data: Dict[int, List[Tuple[UOp, UOp]]] = pickle.load(f)
+  ret = load_uops(data)
+  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps(ret)[0])
