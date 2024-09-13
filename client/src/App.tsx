@@ -38,7 +38,7 @@ export default function App() {
     return <div>can't render empty graph!</div>;
   }
 
-  if ("op" in batch.graphs[0].nodes) {
+  if ("op" in batch.graphs[0].nodes[0]) {
     return <UOpGraph batch={batch as GraphBatch<UOpNode>} />;
   }
   return <ScheduleGraphBatch batch={batch as GraphBatch<ScheduleNode>} />;
