@@ -1,6 +1,6 @@
 import { useState } from "react";
 import FileUploader from "./components/file-uploader";
-import ScheduleGraph from "./schedule-graph";
+import ScheduleGraphBatch from "./schedule-graph";
 import { GraphBatch, ScheduleNode, UOpNode } from "./types";
 import UOpGraph from "./uop-graph";
 
@@ -39,5 +39,5 @@ export default function App() {
   if ("op" in batch.graphs[0].nodes) {
     return <UOpGraph batch={batch as GraphBatch<UOpNode>} />;
   }
-  return <ScheduleGraph batch={batch as GraphBatch<ScheduleNode>} />
+  return <ScheduleGraphBatch batch={batch as GraphBatch<ScheduleNode>} />
 }

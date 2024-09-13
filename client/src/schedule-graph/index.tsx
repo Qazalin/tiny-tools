@@ -1,10 +1,10 @@
 import { GraphBatch, ScheduleNode } from "../types";
+import ScheduleGraph from "./graph"
 
-export default function ScheduleGraph({ batch }: { batch: GraphBatch<ScheduleNode> }) {
+export default function ScheduleGraphBatch({ batch }: { batch: GraphBatch<ScheduleNode> }) {
   return (
     <div>
-      hello from me 2!
-
+      <ScheduleGraph data={batch.graphs[0]} />
     </div>
   )
 }

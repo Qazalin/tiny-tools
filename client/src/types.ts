@@ -21,7 +21,7 @@ export type UOpNode = GraphNode & {
 };
 
 export type GraphData<T = ScheduleNode | UOpNode> = {
-  nodes: T;
+  nodes: T[];
   edges: GraphEdge[];
 };
 
