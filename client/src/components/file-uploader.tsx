@@ -1,14 +1,15 @@
 import { useDropzone } from "react-dropzone";
+import classNames from "classnames"
 import { useState } from "react";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
-import Spinner from "./Spinner";
+import Spinner from "./spinner";
 
 export default function FileUploader({
-  setPickleData,
+  setData,
   isUploading,
   showTip = false,
 }: {
-  setPickleData: (ab: ArrayBuffer) => void;
+  setData: (ab: ArrayBuffer) => void;
   isUploading: boolean;
   showTip?: boolean;
 }) {
@@ -22,8 +23,8 @@ export default function FileUploader({
 
   function fileToBuffer(file: File) {
     const reader = new FileReader();
-    reader.onload = function (event: any) {
-      setPickleData(event.target.result as ArrayBuffer);
+    reader.onload = function(event: any) {
+      setData(event.target.result as ArrayBuffer);
     };
     reader.readAsArrayBuffer(file);
   }
@@ -37,19 +38,14 @@ export default function FileUploader({
 
   return (
     <div
-      className={
-        "space-y-2 flex-col flex " +
-          (showTip && "w-screen h-screen justify-center items-center") || ""
-      }
+      className={classNames("space-y-2 flex-col flex", showTip ? "w-screen h-screen justify-center items-center" : "")}
       {...getRootProps()}
     >
       <div className="h-fit w-fit">
         <label
-          className={
-            "px-5 h-[44px] bg-white rounded-md text-black flex items-center w-fit " +
-            (!isUploading
-              ? "cursor-pointer hover:bg-gray-200 transition-colors"
-              : "cursor-not-allowed bg-gray-300")
+          className={classNames(
+            "px-5 h-[44px] bg-white rounded-md text-black flex items-center w-fit",
+            !isUploading ? "cursor-pointer hover:bg-gray-200 transition-colors" : "cursor-not-allowed bg-gray-300")
           }
         >
           <input
@@ -71,7 +67,7 @@ export default function FileUploader({
           </span>
         </label>
         {showTip && (
-          <p>
+          <p className="mt-2">
             Tip: run tinygrad with <code>SAVE_SCHEDULE=1</code>
           </p>
         )}

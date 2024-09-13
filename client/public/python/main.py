@@ -9,8 +9,8 @@ from tinygrad.engine.schedule import LBScheduleItem
 
 # *** GraphNode return type
 
-INPUT_FP = os.getenv("INPUT_FP", "/sched.pkl")
-OUTPUT_FP = os.getenv("OUTPUT_FP", "/sched.json")
+INPUT_FP = os.getenv("INPUT_FP", "/graph.pkl")
+OUTPUT_FP = os.getenv("OUTPUT_FP", "/graph.json")
 
 @dataclass(frozen=True)
 class GraphNode:
@@ -92,4 +92,5 @@ if __name__ == "__main__":
   with open(INPUT_FP, "rb") as f: s = f.read()
   data = TinyUnpickler(io.BytesIO(s)).load()
   nodes, edges = load_schedule(data)
-  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps({"nodes": list(map(asdict, nodes)), "edges": edges }))
+  ret = {"graphs": [{"nodes": list(map(asdict, nodes)), "edges": edges }]}
+  with open(OUTPUT_FP, "w") as fh: fh.write(json.dumps(ret))

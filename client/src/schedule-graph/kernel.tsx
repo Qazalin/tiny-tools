@@ -1,6 +1,6 @@
 import { XMarkIcon, ClipboardIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef } from "react";
-import CodeBlock from "../components/CodeBlock";
+import CodeBlock from "../components/code-block";
 import { ScheduleNode } from "../types";
 
 type KernelProps = { si: ScheduleNode | null; onClose: () => void };
