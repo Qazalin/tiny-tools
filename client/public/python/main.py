@@ -86,17 +86,18 @@ class GraphData(TypedDict):
 def load_uops(data:Dict[int, List[Tuple[UOp, UOp]]]) -> List[GraphData]:
   ret: List[GraphData] = []
   for _, rewrites in data.items():
-    nodes: List[UOpNode] = []
-    edges: List[Dict[str, str]] = []
     for sink_id, (prev, _rw) in enumerate(rewrites):
-      uops = list(prev.sparents)
-      for uid, x in enumerate(uops):
-        nodes.append(to_uop_node(f"{sink_id}-{uid}", x))
-        for y in x.src:
-          input_idx = uops.index(y)
-          edge_id = f"{sink_id}-{input_idx}-{uid}"
-          edges.append({"source": f"{sink_id}-{input_idx}", "target": f"{sink_id}-{uid}", "id": edge_id, "label": edge_id})
-    ret.append({"nodes": list(map(asdict, nodes)), "edges": edges })
+      for uop in (prev, _rw):
+        nodes: List[UOpNode] = []
+        edges: List[Dict[str, str]] = []
+        uops = list(uop.sparents)
+        for uid, x in enumerate(uops):
+          nodes.append(to_uop_node(f"a-{sink_id}-{uid}", x))
+          for y in x.src:
+            input_idx = uops.index(y)
+            edge_id = f"a-{sink_id}-{input_idx}-{uid}"
+            edges.append({"source": f"a-{sink_id}-{input_idx}", "target": f"a-{sink_id}-{uid}", "id": edge_id, "label": edge_id})
+        ret.append({"nodes": list(map(asdict, nodes)), "edges": edges })
   return ret
 
 def load_schedule(data:List[Tuple[DefaultDict[LBScheduleItem, List[LBScheduleItem]], DefaultDict[LBScheduleItem, int]]]) -> List[GraphData]:
