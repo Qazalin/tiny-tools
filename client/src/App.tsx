@@ -19,7 +19,7 @@ export default function App() {
     await py.loadPackage("micropip");
     await py.loadPackage("sqlite3");
     const micropip = py.pyimport("micropip");
-    await micropip.install("tinygrad-tools");
+    await micropip.install("tinygrad-tools==0.9.14");
 
     py.FS.writeFile("/graph.pkl", new Uint8Array(raw), { encoding: "binary" });
     const res = await fetch("/python/main.py");
