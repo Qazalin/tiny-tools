@@ -10,6 +10,19 @@ GH_HEADERS = {"Authorization": f"Bearer {os.getenv('GH_TOKEN')}", "Accept": "app
 SYSTEMS_MAP = {'Speed (AMD)': 'amd', 'Speed (AMD Training)': 'amd-train', 'Speed (NVIDIA)': 'nvidia', 'Speed (NVIDIA Training)': 'nvidia-train', 'Speed (Mac)': 'mac', 'Speed (comma)': 'comma'}
 SYSTEMS = list(SYSTEMS_MAP.values())
 
+def get_artifacts(run):
+  artifacts = requests.get(run["artifacts_url"], headers=GH_HEADERS).json()["artifacts"]
+  for artifact in artifacts:
+    res = requests.get(artifact["archive_download_url"], headers=GH_HEADERS)
+    assert res.status_code == 200, f"download failed {res.status_code}"
+    with io.BytesIO(res.content) as zip_content:
+      with zipfile.ZipFile(zip_content, "r") as zip_ref: zip_ref.extractall(f"/tmp/benchmarks/{run['run_number']}_{run['head_sha']}/{SYSTEMS_MAP[artifact['name']]}")
+
+def get_run(run_id:int):
+  res = requests.get(f"{BASE_URL}/actions/runs/{run_id}", headers=GH_HEADERS)
+  assert res.status_code == 200, f"GET failed {res.status_code} {res.json()}"
+  get_artifacts(res.json())
+
 def get_runs(branch:str, per_page:int):
   print(f"*** getting {per_page} runs for {branch}")
   res = requests.get(f"{BASE_URL}/actions/workflows/benchmark.yml/runs?branch={branch}&status=success&per_page={per_page}", headers=GH_HEADERS)
@@ -17,12 +30,7 @@ def get_runs(branch:str, per_page:int):
   runs = res.json()["workflow_runs"]
   for run in runs:
     print(run["id"])
-    artifacts = requests.get(run["artifacts_url"], headers=GH_HEADERS).json()["artifacts"]
-    for artifact in artifacts:
-      res = requests.get(artifact["archive_download_url"], headers=GH_HEADERS)
-      assert res.status_code == 200, f"download failed {res.status_code}"
-      with io.BytesIO(res.content) as zip_content:
-        with zipfile.ZipFile(zip_content, "r") as zip_ref: zip_ref.extractall(f"/tmp/benchmarks/{run['run_number']}_{run['head_sha']}/{SYSTEMS_MAP[artifact['name']]}")
+    get_artifacts(run)
 
 def append():
   files = list(sorted(list(glob.glob(f"/tmp/benchmarks/*")), key=lambda f:int(f.split("/")[-1].split("_")[0])))
@@ -57,3 +65,5 @@ def append():
 get_runs("master", 10)
 get_runs("update_benchmark", 1)
 append()
+
+#get_run(11441743957)
