@@ -1,6 +1,3 @@
 [submodule "tinystats"]
 	path = tinystats
 	url = git@github.com:Qazalin/tinystats.git
-[submodule "tinygrad"]
-	path = tinygrad
-	url = git@github.com:Qazalin/tinygrad.git
