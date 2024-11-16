@@ -1,10 +1,11 @@
-import os, requests, zipfile, io, glob, json
+import os, requests, zipfile, io, glob, json, subprocess
 from benchmark import TRACKED_BENCHMARKS, regex_extract_benchmark
 from tinygrad.helpers import db_connection
 
 # *** github settings
+GH_TOKEN = subprocess.getoutput("gh auth token")
 BASE_URL = f"https://api.github.com/repos/{os.getenv('GITHUB_REPOSITORY', 'tinygrad/tinygrad')}"
-GH_HEADERS = {"Authorization": f"Bearer {os.getenv('GH_TOKEN')}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+GH_HEADERS = {"Authorization": f"Bearer {GH_TOKEN}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 # *** benchmark settings
 SYSTEMS_MAP = {'Speed (AMD)': 'amd', 'Speed (AMD Training)': 'amd-train', 'Speed (NVIDIA)': 'nvidia', 'Speed (NVIDIA Training)': 'nvidia-train', 'Speed (Mac)': 'mac', 'Speed (comma)': 'comma'}
@@ -62,8 +63,7 @@ def append():
   conn.commit()
   conn.close()
 
+os.rmdir("/tmp/benchmarks")
 get_runs("master", 10)
 get_runs("update_benchmark", 1)
 append()
-
-#get_run(11441743957)
