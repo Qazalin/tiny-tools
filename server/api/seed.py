@@ -63,7 +63,8 @@ def append():
   conn.commit()
   conn.close()
 
-os.rmdir("/tmp/benchmarks")
+try: os.rmdir("/tmp/benchmarks")
+except: pass
 get_runs("master", 10)
 get_runs("update_benchmark", 1)
 append()
