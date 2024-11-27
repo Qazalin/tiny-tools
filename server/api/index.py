@@ -1,9 +1,11 @@
-import json, os, redis, requests
+import json, os, redis, requests, subprocess
 from urllib.parse import urlparse, parse_qs
 from typing import cast
 from http.server import BaseHTTPRequestHandler
 
-GH_HEADERS = {"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+
+GH_TOKEN = subprocess.getoutput("gh auth token")
+GH_HEADERS = {"Authorization": f"Bearer {GH_TOKEN}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
 
 class handler(BaseHTTPRequestHandler):
   def _set_headers(self):

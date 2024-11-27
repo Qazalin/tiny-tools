@@ -19,7 +19,7 @@ def get_artifacts(run):
     with io.BytesIO(res.content) as zip_content:
       with zipfile.ZipFile(zip_content, "r") as zip_ref: zip_ref.extractall(f"/tmp/benchmarks/{run['run_number']}_{run['head_sha']}/{SYSTEMS_MAP[artifact['name']]}")
 
-def get_run(run_id:int):
+def get_run(run_id:str):
   res = requests.get(f"{BASE_URL}/actions/runs/{run_id}", headers=GH_HEADERS)
   assert res.status_code == 200, f"GET failed {res.status_code} {res.json()}"
   get_artifacts(res.json())
