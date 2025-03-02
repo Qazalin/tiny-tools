@@ -9,6 +9,7 @@ REGEXES = {
   "gpt2": re.compile(r"ran model in[ ]+(\d+\.\d+) ms"),
   "cifar": re.compile(r"\d+[ ]+(\d+\.\d+) ms run,"),
   "resnet": re.compile(r"\d+[ ]+(\d+\.\d+) ms run,"),
+  "bert": re.compile(r"\d+[ ]+(\d+\.\d+) ms run,"),
   "openpilot_compile": re.compile(r"s/[ ]+(\d+\.\d+)ms"),
   "openpilot": re.compile(r"jitted:[ ]+(\d+\.\d+) ms"),
 }
@@ -47,6 +48,8 @@ TRACKED_BENCHMARKS = {
   # resnet
   "train_resnet_one_gpu.txt": (REGEXES["resnet"], ["amd-train", "nvidia-train"], 3, 0),
   "train_resnet.txt": (REGEXES["resnet"], ["amd-train", "nvidia-train"], 3, 0),
+  # bert
+  "train_bert.txt": (REGEXES["bert"], ["amd-train", "nvidia-train"], 3, 0),
   # openpilot
   "openpilot_compile_0_9_4.txt": (REGEXES["openpilot_compile"], ["comma"], 0, -1),
   "openpilot_compile_0_9_7.txt": (REGEXES["openpilot_compile"], ["comma"], 0, -1),
